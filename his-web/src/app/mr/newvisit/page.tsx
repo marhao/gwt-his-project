@@ -806,7 +806,7 @@ export default function OpdNewVisitResponsive() {
                     onNewPatient={handleNewPatientFromCard}
                     onError={(err) => console.error(err)}
                     disabled={loading}
-                    serverUrl="http://localhost:8080"
+                    serverUrl={process.env.NEXT_PUBLIC_WS_URL}
                     className="size-11"
                   />
                 </div>
