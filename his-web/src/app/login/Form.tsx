@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+// import { zodResolver } from '@hookform/resolvers/zod';
+import { safeZodResolver } from '@/lib/zod';
 import { z } from 'zod';
 import { User, Lock, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/components/providers';
@@ -24,20 +25,17 @@ const FormLogin = () => {
         handleSubmit,
         formState: { errors },
     } = useForm<LoginSchemaType>({
-        resolver: zodResolver(loginSchema),
+        resolver: safeZodResolver(loginSchema),
     });
-    console.log('Form errors', errors);
 
     const onSubmit = async (data: LoginSchemaType) => {
-        console.log(data);
-
-        // setError(null);
-        // try {
-        //     await login(data.username, data.password);
-        // } catch (err: unknown) {
-        //     const error = err as { message?: string };
-        //     setError(error.message || 'Invalid username or password');
-        // }
+        setError(null);
+        try {
+            await login(data.username, data.password);
+        } catch (err: unknown) {
+            const error = err as { message?: string };
+            setError(error.message || 'Invalid username or password');
+        }
     };
 
     return (
