@@ -1,9 +1,0 @@
-{
-  "/mr/newvisit/page": "app/mr/newvisit/page.js",
-  "/page": "app/page.js",
-  "/patients/[hn]/page": "app/patients/[hn]/page.js",
-  "/patients/page": "app/patients/page.js",
-  "/settings/roles/add/page": "app/settings/roles/add/page.js",
-  "/settings/roles/page": "app/settings/roles/page.js",
-  "/settings/users/page": "app/settings/users/page.js"
-}
