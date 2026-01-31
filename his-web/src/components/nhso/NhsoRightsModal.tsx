@@ -555,7 +555,7 @@ export function NhsoRightsModal({
               {onApplyRights && isActive && (
                 <button
                   onClick={() => onApplyRights(rights)}
-                  className={`flex-1 px-4 py-3 text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2 ${rightTypeInfo.buttonColor}`}
+                  className={`flex-1 px-4 py-3 text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer ${rightTypeInfo.buttonColor}`}
                 >
                   <CheckCircle2 size={18} />
                   ใช้สิทธิ์นี้
