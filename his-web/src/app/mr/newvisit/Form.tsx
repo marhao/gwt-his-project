@@ -115,7 +115,6 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
     const { register, handleSubmit, formState: { errors }} = useForm<FormSchemaType>({
         resolver: safeZodResolver(formSchema)
     });
-    const [nhsoRights, setNhsoRights] = useState<NhsoPersonalFund | null>(null);
 
       // ==========================================
       // Lookup data from API
@@ -421,7 +420,6 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
                                         <NHSOButon
                                             cid={patient && patient?.cid}
                                             patientName={patient && patient?.name || ''}
-                                            onClick={() => setNhsoRights(null)}
                                             onSuccess={(data) => {
                                                 /** Set สิทธิการรักษา  */
                                                 const pttypeOption = pttypeOptions.find(p => p.value === data);
