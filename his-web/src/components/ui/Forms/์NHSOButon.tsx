@@ -5,11 +5,12 @@ import { Shield } from 'lucide-react';
 import { nhsoApi } from '@/lib/api/index';
 import { NhsoLoginModal, NhsoRightsModal } from '@/components/nhso';
 import type { NhsoPersonalFund } from '@/lib/api/types/nhso';
+import { NHSO_TO_PTTYPE_MAPPING } from '@/lib/constants';
 
 type NHSOButonProps = {
     cid: string | null;
     patientName: string;
-    onClick: () => void;
+    onClick?: () => void;
     onSuccess: (data: any) => void;
 }
 const NHSOButon = ({ cid, patientName, onClick, onSuccess }: NHSOButonProps) => {
@@ -84,6 +85,7 @@ const NHSOButon = ({ cid, patientName, onClick, onSuccess }: NHSOButonProps) => 
         setShowNhsoRightsModal(true);
         setNhsoLoading(true);
         setNhsoError(null);
+        setNhsoRights(null);
 
         try {
             const result = await nhsoApi.searchByPid(cid);
@@ -115,16 +117,7 @@ const NHSOButon = ({ cid, patientName, onClick, onSuccess }: NHSOButonProps) => 
      */
     const handleApplyNhsoRights = (rights: NhsoPersonalFund) => {
         // Map NHSO rights to pttype if possible
-        // This mapping depends on your hospital's pttype configuration
-        const nhsoToPttypeMap: Record<string, string> = {
-            'UCS': 'T1',    // บัตรทอง
-            'OFC': 'A7',    // ข้าราชการ  
-            'SSS': 'B1',    // ประกันสังคม
-            'LGO': 'A1',    // อปท.
-            // Add more mappings as needed
-        };
-
-        const mappedPttype = rights.mainInscl && Object.keys(nhsoToPttypeMap).find(pt => pt === rights.mainInscl?.rightId);
+        const mappedPttype = rights.mainInscl && Object.keys(NHSO_TO_PTTYPE_MAPPING).find(pt => pt === rights.mainInscl?.rightId);
         if (mappedPttype) {
             onSuccess(mappedPttype);
         }
