@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import {
@@ -40,10 +40,22 @@ import CollapsibleSection from '@/components/ui/CollapsibleSection';
 import FormField from '@/components/ui/Forms/FormField';
 import CustomSelect from '@/components/ui/CustomSelect';
 import NHSOButon from '@/components/ui/Forms/์NHSOButon';
-import type { NhsoPersonalFund } from '@/lib/api/types/nhso';
 
 const formSchema = z.object({
-    hn: z.string().min(7),
+    // hn: z.string().min(7),
+    cid: z.string().optional(),
+    visitDate: z.string().optional(),
+    visitTime: z.string().optional(),
+    visitType: z.string().nonempty(),
+    pttype: z.string().nonempty(),
+    pttypeName: z.string().optional(),
+    chiefComplaint: z.string().nonempty(),
+    department: z.string().nonempty(),
+    spclty: z.string().nonempty(),
+    patientType: z.string().nonempty(),
+    urgency: z.string().nonempty(),
+    patientStatus: z.string().optional(),
+    timeType: z.string().nonempty(),
 });
 
 type FormSchemaType = z.infer<typeof formSchema>;
@@ -62,10 +74,12 @@ interface Patient {
     bloodType?: string;
     allergies?: string[];
     lastVisit?: string;
+    pttype?: string;
     pttypeName?: string;
 }
 
 interface FormData {
+    cid: string;
     visitDate: string;
     visitTime: string;
     visitType: string;
@@ -74,15 +88,15 @@ interface FormData {
     chiefComplaint: string;
     department: string;
     spclty: string;
-    cid: string;
-    patientType: string;
-    timeType: string;
-    urgency: string;
-    patientStatus: string;
+    patientType: string; //ประเภทผู้ป่วย
+    urgency: string; //ความเร่งด่วน
+    patientStatus: string; //สภาพผู้ป่วย
+    timeType: string; //ประเภทเวลา
 }
 
 type FormNewVisitProps = {
     patient: Patient | null;
+    onClear?: () => void;
 }
 
 // Static options (ไม่มีใน database)
@@ -92,11 +106,12 @@ const patientStatusOptions = [
     { value: 'stretcher', label: 'เปลนอน', icon: '🛏️' },
 ];
 
-const FormNewVisit = ({ patient }: FormNewVisitProps) => {
+const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
     const [isLoading, setIsLoading] = useState(false)
     const [saving, setSaving] = useState(false);
     // Form data
     const [formData, setFormData] = useState<FormData>({
+        cid: '',
         visitDate: new Date().toISOString().split('T')[0],
         visitTime: '',
         visitType: '',
@@ -105,16 +120,92 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
         chiefComplaint: '',
         department: '',
         spclty: '',
-        cid: '',
         patientType: 'general',
         timeType: 'intime',
         urgency: 'normal',
         patientStatus: 'walkin',
     });
     const [lockLastVisit, setLockLastVisit] = useState(false);
-    const { register, handleSubmit, formState: { errors }} = useForm<FormSchemaType>({
-        resolver: safeZodResolver(formSchema)
+    const { register, setValue, handleSubmit, formState: { errors }} = useForm<FormSchemaType>({
+        resolver: safeZodResolver(formSchema),
+        defaultValues: {
+            cid: '',
+            visitDate: new Date().toISOString().split('T')[0],
+            visitTime: '',
+            visitType: '',
+            pttype: '',
+            pttypeName: '',
+            chiefComplaint: '',
+            department: '',
+            spclty: '',
+            patientType: 'general',
+            timeType: 'intime',
+            urgency: 'normal',
+            patientStatus: 'walkin',
+        }
     });
+
+    // ==========================================
+    // Lookup data from API
+    // ==========================================
+    /**
+     * visitTypeOptions, 
+     * pttypeOptions,
+     * departmentOptions,
+     * spcltyOptions,
+     * isLoading: lookupsLoading,
+     * error: lookupsError,
+     */
+    const lookups = useOpdVisitLookups();
+
+    // ==========================================
+    // Set default values when lookups loaded
+    // ==========================================
+    useEffect(() => {
+        if (visitTypeOptions.length > 0 && !formData.visitType) {
+        // Find default visit type (e.g., 'W' for Walk-in or first option)
+        const defaultVisitType = visitTypeOptions.find(v => v.value === 'W') || visitTypeOptions[0];
+        if (defaultVisitType) {
+            setFormData(prev => ({
+                ...prev,
+                visitType: defaultVisitType.value,
+            }));
+        }
+        }
+    }, [lookups.visitTypeOptions, formData.visitType]);
+
+    useEffect(() => {
+        if (pttypeOptions.length > 0 && !formData.pttype) {
+        // Find default pttype (e.g., '10' for ชำระเงินเอง or first option)
+        const defaultPttype = pttypeOptions.find(p => p.value === '10') || pttypeOptions[0];
+        if (defaultPttype) {
+            setFormData(prev => ({
+            ...prev,
+            pttype: defaultPttype.value,
+            pttypeName: defaultPttype.label.split(' - ')[1] || defaultPttype.label,
+            }));
+        }
+        }
+    }, [lookups.pttypeOptions, formData.pttype]);
+
+    useEffect(() => {
+        if (patient) {
+            setValue("cid", patient.cid)
+            setValue("pttype", patient.pttype || '')
+            setValue("pttypeName", patient.pttypeName || '')
+
+            setFormData((prev) => ({
+                ...prev,
+                cid: patient.cid || '',
+                pttype: patient.pttype || prev.pttype,
+                pttypeName: patient.pttypeName || prev.pttypeName,
+            }));
+        }
+    }, [patient])
+
+    useEffect(() => {
+        console.log(errors);
+    }, [errors])
 
       // ==========================================
       // Lookup data from API
@@ -128,11 +219,24 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
         error: lookupsError,
     } = useOpdVisitLookups();
 
-    const handleSave = async () => {
-        // if (!patient) return;
-        // setSaving(true);
-        // await new Promise((r) => setTimeout(r, 1500));
-        // setSaving(false);
+    const handleSave = async (data: FormSchemaType) => {
+        if (!patient) return;
+        console.log(data);
+
+        try {
+            setSaving(true);
+
+            /** Simulate to save data as async: */
+            await new Promise((r) => setTimeout(r, 1500));
+
+            /** In production, use: */
+            /** TODO: to post data to api */
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setSaving(false);
+        }
+
         // Show success & redirect
     };
 
@@ -163,7 +267,7 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
     };
 
     return (
-        <>
+        <form onSubmit={handleSubmit(handleSave)}>
             <div className="mt-4 lg:mt-0">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
                     {/* ============================================ */}
@@ -188,6 +292,7 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
                                                 ความเร่งด่วน
                                             </label>
                                             <div className="grid grid-cols-3 gap-2">
+                                                <input type="hidden" {...register("urgency")} />
                                                 {[
                                                     { value: 'normal', label: 'ปกติ', icon: '●', color: 'emerald' },
                                                     { value: 'urgent', label: 'เร่งด่วน', icon: '●', color: 'amber' },
@@ -195,7 +300,10 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
                                                 ].map((opt) => (
                                                     <button
                                                         key={opt.value}
-                                                        onClick={() => setFormData({ ...formData, urgency: opt.value })}
+                                                        onClick={() => {
+                                                            setValue("urgency", opt.value)
+                                                            setFormData({ ...formData, urgency: opt.value })
+                                                        }}
                                                         className={`
                                                             relative group p-3 rounded-xl border-2 transition-all duration-200
                                                             ${formData.urgency === opt.value
@@ -212,12 +320,12 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
                                                             <span className={`
                                                                 text-lg transition-transform group-hover:scale-110
                                                                 ${formData.urgency === opt.value
-                                                                ? opt.color === 'emerald'
-                                                                    ? 'text-emerald-500'
-                                                                    : opt.color === 'amber'
-                                                                    ? 'text-amber-500'
-                                                                    : 'text-red-500'
-                                                                : 'text-slate-300 dark:text-slate-600'
+                                                                    ? opt.color === 'emerald'
+                                                                        ? 'text-emerald-500'
+                                                                        : opt.color === 'amber'
+                                                                        ? 'text-amber-500'
+                                                                        : 'text-red-500'
+                                                                    : 'text-slate-300 dark:text-slate-600'
                                                                 }
                                                             `}>
                                                                 {opt.icon}
@@ -225,12 +333,12 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
                                                             <span className={`
                                                                 text-xs font-medium
                                                                 ${formData.urgency === opt.value
-                                                                ? opt.color === 'emerald'
-                                                                    ? 'text-emerald-700 dark:text-emerald-400'
-                                                                    : opt.color === 'amber'
-                                                                    ? 'text-amber-700 dark:text-amber-400'
-                                                                    : 'text-red-700 dark:text-red-400'
-                                                                : 'text-slate-600 dark:text-slate-400'
+                                                                    ? opt.color === 'emerald'
+                                                                        ? 'text-emerald-700 dark:text-emerald-400'
+                                                                        : opt.color === 'amber'
+                                                                        ? 'text-amber-700 dark:text-amber-400'
+                                                                        : 'text-red-700 dark:text-red-400'
+                                                                    : 'text-slate-600 dark:text-slate-400'
                                                                 }
                                                             `}>
                                                                 {opt.label}
@@ -261,16 +369,20 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
                                                 สภาพผู้ป่วย
                                             </label>
                                             <div className="grid grid-cols-3 gap-2">
+                                                <input type="hidden" {...register("patientStatus")} />
                                                 {patientStatusOptions.map((opt) => (
                                                     <button
                                                         key={opt.value}
-                                                        onClick={() => setFormData({ ...formData, patientStatus: opt.value })}
+                                                        onClick={() => {
+                                                            setValue("patientStatus", opt.value)
+                                                            setFormData({ ...formData, patientStatus: opt.value })
+                                                        }}
                                                         className={`
-                                                        relative group p-3 rounded-xl border-2 transition-all duration-200
-                                                        ${formData.patientStatus === opt.value
-                                                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-500/10 shadow-sm shadow-primary-500/20'
-                                                            : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/50'
-                                                        }
+                                                            relative group p-3 rounded-xl border-2 transition-all duration-200
+                                                            ${formData.patientStatus === opt.value
+                                                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-500/10 shadow-sm shadow-primary-500/20'
+                                                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                                                            }
                                                         `}
                                                     >
                                                         <div className="flex flex-col items-center gap-1.5">
@@ -280,8 +392,8 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
                                                         <span className={`
                                                             text-xs font-medium
                                                             ${formData.patientStatus === opt.value
-                                                            ? 'text-primary-700 dark:text-primary-400'
-                                                            : 'text-slate-600 dark:text-slate-400'
+                                                                ? 'text-primary-700 dark:text-primary-400'
+                                                                : 'text-slate-600 dark:text-slate-400'
                                                             }
                                                         `}>
                                                             {opt.label}
@@ -291,7 +403,7 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
                                                         {formData.patientStatus === opt.value && (
                                                         <div className="absolute -top-1 -right-1 size-4 rounded-full bg-primary-500 flex items-center justify-center">
                                                             <svg className="size-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                                             </svg>
                                                         </div>
                                                         )}
@@ -318,8 +430,13 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
                                                     `}
                                                 />
                                                 <div className="relative grid grid-cols-2 gap-1">
+                                                    <input type="hidden" {...register("timeType")} />
                                                     <button
-                                                        onClick={() => setFormData({ ...formData, timeType: 'intime' })}
+                                                        type='button'
+                                                        onClick={() => {
+                                                            setValue("timeType", 'intime')
+                                                            setFormData({ ...formData, timeType: 'intime' })
+                                                        }}
                                                         className={`
                                                             relative z-10 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200
                                                             ${formData.timeType === 'intime'
@@ -336,13 +453,16 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
                                                         </div>
                                                     </button>
                                                     <button
-                                                        onClick={() => setFormData({ ...formData, timeType: 'outtime' })}
+                                                        onClick={() => {
+                                                            setValue("timeType", 'outtime')
+                                                            setFormData({ ...formData, timeType: 'outtime' })
+                                                        }}
                                                         className={`
-                                                        relative z-10 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200
-                                                        ${formData.timeType === 'outtime'
-                                                            ? 'text-primary-600 dark:text-primary-400'
-                                                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
-                                                        }
+                                                            relative z-10 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200
+                                                            ${formData.timeType === 'outtime'
+                                                                ? 'text-primary-600 dark:text-primary-400'
+                                                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                                                            }
                                                         `}
                                                     >
                                                         <div className="flex items-center justify-center gap-2">
@@ -378,7 +498,7 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
                                     <div className="flex gap-2">
                                         <input
                                             type="text"
-                                            value={formData.visitType}
+                                            {...register("visitType")}
                                             readOnly
                                             className="w-16 px-3 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-center font-mono"
                                         />
@@ -388,10 +508,16 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
                                                 value={formData.visitType}
                                                 dropdownTitle='เลือกประเภทการมา'
                                                 showBackdrop={true}
-                                                onChange={(val) => setFormData({ ...formData, visitType: val })}
+                                                onChange={(val) => {
+                                                    setValue("visitType", val);
+                                                    setFormData({ ...formData, visitType: val });
+                                                }}
                                             />
                                         </div>
                                     </div>
+                                    {errors.visitType && (
+                                        <p className="mt-2 text-sm text-critical-500">{errors.visitType.message}</p>
+                                    )}
                                 </FormField>
 
                                 {/* Rights */}
@@ -399,7 +525,7 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
                                     <div className="flex flex-col sm:flex-row gap-2">
                                         <input
                                             type="text"
-                                            value={formData.pttype}
+                                            {...register("pttype")}
                                             readOnly
                                             className="w-full sm:w-16 px-3 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-center font-mono"
                                         />
@@ -409,6 +535,8 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
                                                 value={formData.pttype}
                                                 onChange={(val) => {
                                                     const selected = pttypeOptions.find((o) => o.value === val);
+                                                    setValue("pttype", val);
+                                                    setValue("pttypeName", selected?.label.split(' - ')[1] || '');
                                                     setFormData({
                                                         ...formData,
                                                         pttype: val,
@@ -458,12 +586,14 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
                         >
                             <FormField label="อาการสำคัญ (Chief Complaint)" required>
                                 <textarea
-                                    value={formData.chiefComplaint}
-                                    onChange={(e) => setFormData({ ...formData, chiefComplaint: e.target.value })}
+                                    {...register("chiefComplaint")}
                                     placeholder="ระบุอาการสำคัญที่นำผู้ป่วยมาพบแพทย์..."
                                     rows={3}
                                     className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 resize-none"
                                 />
+                                {errors.chiefComplaint && (
+                                    <p className="mt-2 text-sm text-critical-500">{errors.chiefComplaint.message}</p>
+                                )}
                             </FormField>
                         </CollapsibleSection>
 
@@ -478,7 +608,7 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
                                     <div className="flex gap-2">
                                         <input
                                             type="text"
-                                            value={formData.department ? formData.department.substring(0, 3) : '###'}
+                                            {...register("department")}
                                             readOnly
                                             className="w-16 px-3 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-center font-mono"
                                         />
@@ -488,11 +618,17 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
                                                 value={formData.department}
                                                 showBackdrop={true}
                                                 dropdownTitle="เลือกห้องตรวจ"
-                                                onChange={(val) => setFormData({ ...formData, department: val })}
+                                                onChange={(val) => {
+                                                    setValue("department", val);
+                                                    setFormData({ ...formData, department: val });
+                                                }}
                                                 placeholder="เลือกห้องตรวจ..."
                                             />
                                         </div>
                                     </div>
+                                    {errors.department && (
+                                        <p className="mt-2 text-sm text-critical-500">{errors.department.message}</p>
+                                    )}
                                 </FormField>
 
                                 {/* Specialty */}
@@ -500,7 +636,7 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
                                     <div className="flex gap-2">
                                         <input
                                             type="text"
-                                            value={formData.spclty ? formData.spclty.substring(0, 3) : '###'}
+                                            {...register("spclty")}
                                             readOnly
                                             className="w-16 px-3 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-center font-mono"
                                         />
@@ -510,7 +646,10 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
                                                 value={formData.spclty}
                                                 showBackdrop={true}
                                                 dropdownTitle="เลือกแผนก"
-                                                onChange={(val) => setFormData({ ...formData, spclty: val })}
+                                                onChange={(val) => {
+                                                    setValue("spclty", val);
+                                                    setFormData({ ...formData, spclty: val });
+                                                }}
                                                 placeholder="เลือกแผนก..."
                                             />
                                         </div>
@@ -738,7 +877,7 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
                                 ล้างข้อมูล
                             </button>
                             <button
-                                onClick={handleSave}
+                                type="submit"
                                 disabled={saving || !patient || !formData.department || !formData.spclty}
                                 className="flex-1 px-6 py-3 bg-primary-500 text-white rounded-xl hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2 shadow-lg shadow-primary-500/30"
                             >
@@ -765,31 +904,31 @@ const FormNewVisit = ({ patient }: FormNewVisitProps) => {
             <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4 lg:hidden z-40">
                 <div className="flex gap-3 max-w-lg mx-auto">
                     <button
-                    onClick={handleClear}
-                    className="px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl transition-colors"
+                        onClick={handleClear}
+                        className="px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl transition-colors"
                     >
-                    <Trash2 size={20} />
+                        <Trash2 size={20} />
                     </button>
                     <button
-                    onClick={handleSave}
-                    disabled={saving || !patient || !formData.department || !formData.spclty}
-                    className="flex-1 py-3 bg-primary-500 text-white rounded-xl hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
+                        type="submit"
+                        disabled={saving || !patient || !formData.department || !formData.spclty}
+                        className="flex-1 py-3 bg-primary-500 text-white rounded-xl hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
                     >
-                    {saving ? (
-                        <>
-                        <Loader2 className="size-5 animate-spin" />
-                        กำลังบันทึก...
-                        </>
-                    ) : (
-                        <>
-                        <Check size={20} />
-                        บันทึกและส่งตรวจ
-                        </>
-                    )}
+                        {saving ? (
+                            <>
+                            <Loader2 className="size-5 animate-spin" />
+                            กำลังบันทึก...
+                            </>
+                        ) : (
+                            <>
+                            <Check size={20} />
+                            บันทึกและส่งตรวจ
+                            </>
+                        )}
                     </button>
                 </div>
             </div>
-        </>
+        </form>
     )
 }
 
