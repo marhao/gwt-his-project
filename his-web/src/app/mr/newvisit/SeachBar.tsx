@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { QrCode } from 'lucide-react';
 import { SearchablePatientSelect } from '@/components/ui';
 import { SmartCardButton } from '@/components/ui/SmartCardButton';
-import { PatientListItem } from '@/types/patient.types';
+import { PatientListItem } from '@/types/patient';
 import { SmartCardData } from '@/hooks/useSmartCardReader';
 import { patientApi, patientImageApi } from '@/lib/api';
 

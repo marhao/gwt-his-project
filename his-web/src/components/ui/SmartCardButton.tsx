@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { CreditCard, Wifi, WifiOff, Loader2, Check, AlertCircle, X } from 'lucide-react';
 import { useSmartCardReader, SmartCardData } from '@/hooks/useSmartCardReader';
 import { patientApi } from '@/lib/api';
-import { PatientListItem } from '@/types/patient.types';
+import { PatientListItem } from '@/types/patient';
 
 interface SmartCardButtonProps {
   onPatientFound: (hn: string, patient: PatientListItem, cardPhoto?: string | null) => void;

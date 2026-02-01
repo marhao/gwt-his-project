@@ -6,7 +6,7 @@ import {
   PatientSearchParams, 
   PatientListResponse, 
   PatientStats 
-} from '@/types/patient.types';
+} from '@/types/patient';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333/api/v1';
 

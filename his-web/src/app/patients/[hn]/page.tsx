@@ -38,7 +38,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/layout';
-import { PatientDetail } from '@/types/patient.types';
+import { PatientDetail } from '@/types/patient';
 import { usePatientDetail } from '@/hooks';
 import { patientApi } from '@/lib/api';
 import { usePatientImageManager } from '@/hooks/usePatientImages';
