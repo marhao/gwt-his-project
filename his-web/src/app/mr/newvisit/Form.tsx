@@ -40,6 +40,7 @@ import CollapsibleSection from '@/components/ui/CollapsibleSection';
 import FormField from '@/components/ui/Forms/FormField';
 import CustomSelect from '@/components/ui/CustomSelect';
 import NHSOButon from '@/components/ui/Forms/์NHSOButon';
+import { type PatientNewVisit as Patient } from '@/types/patient'
 
 const formSchema = z.object({
     // hn: z.string().min(7),
@@ -59,24 +60,6 @@ const formSchema = z.object({
 });
 
 type FormSchemaType = z.infer<typeof formSchema>;
-
-// TODO: Duplicated in OpdNewVisitResponsive page
-interface Patient {
-    hn: string;
-    name: string;
-    cid: string;
-    gender: string;
-    age: string;
-    birthDate: string;
-    phone: string;
-    address: string;
-    photo: string | null;
-    bloodType?: string;
-    allergies?: string[];
-    lastVisit?: string;
-    pttype?: string;
-    pttypeName?: string;
-}
 
 interface FormData {
     cid: string;

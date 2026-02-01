@@ -16,23 +16,7 @@ import { AdminLayout } from '@/components/layout';
 import { useOpdVisitLookups } from '@/hooks/useOpdVisitLookups';
 import SeachBar from './SeachBar';
 import FormNewVisit from './Form';
-
-// TODO: Duplicated in OpdNewVisitResponsive page
-interface Patient {
-    hn: string;
-    name: string;
-    age: string;
-    gender: string;
-    birthDate: string;
-    address: string;
-    cid: string;
-    phone: string;
-    photo: string | null;
-    bloodType?: string;
-    allergies?: string[];
-    lastVisit?: string;
-    pttypeName?: string;
-}
+import { type PatientNewVisit as Patient } from '@/types/patient'
 
 // ============================================
 // Main Component

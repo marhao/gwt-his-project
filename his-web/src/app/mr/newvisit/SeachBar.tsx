@@ -8,24 +8,7 @@ import { SmartCardButton } from '@/components/ui/SmartCardButton';
 import { PatientListItem } from '@/types/patient';
 import { SmartCardData } from '@/hooks/useSmartCardReader';
 import { patientApi, patientImageApi } from '@/lib/api';
-
-// TODO: Duplicated in OpdNewVisitResponsive page
-interface Patient {
-    hn: string;
-    name: string;
-    age: string;
-    gender: string;
-    birthDate: string;
-    address: string;
-    cid: string;
-    phone: string;
-    photo: string | null;
-    bloodType?: string;
-    allergies?: string[];
-    lastVisit?: string;
-    pttype?: string;
-    pttypeName?: string;
-}
+import { type PatientNewVisit as Patient } from '@/types/patient'
 
 type SearchBarProps = {
     pttypeOptions: any[];

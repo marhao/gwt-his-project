@@ -70,6 +70,25 @@ export interface Patient {
 }
 
 // ============================================
+// PatientNewVisit (สำหรับส่งตรวจ visit ใหม่)
+// ============================================
+export interface PatientNewVisit {
+    hn: string;
+    name: string;
+    cid: string;
+    gender: string;
+    age: string;
+    birthDate: string;
+    address: string;
+    phone: string;
+    bloodType?: string;
+    allergies?: string[];
+    lastVisit?: string;
+    pttypeName?: string;
+    photo: string | null;
+  }
+
+// ============================================
 // Patient List Item (สำหรับแสดงในรายการ)
 // ============================================
 export interface PatientListItem {
