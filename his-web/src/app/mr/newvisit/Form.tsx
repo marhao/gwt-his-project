@@ -126,7 +126,7 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
         patientStatus: 'walkin',
     });
     const [lockLastVisit, setLockLastVisit] = useState(false);
-    const { register, setValue, handleSubmit, formState: { errors }} = useForm<FormSchemaType>({
+    const { register, setValue, reset, handleSubmit, formState: { errors }} = useForm<FormSchemaType>({
         resolver: safeZodResolver(formSchema),
         defaultValues: {
             cid: '',
@@ -241,29 +241,28 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
     };
 
     const handleClear = () => {
-        // setSearchHn('');
-        // setSelectedPatientItem(null);
-        // setSmartCardPhoto(null);
+        reset();
+        onClear!();
 
         // Reset to default values from lookups
-        // const defaultVisitType = visitTypeOptions.find(v => v.value === 'W') || visitTypeOptions[0];
-        // const defaultPttype = pttypeOptions.find(p => p.value === '10') || pttypeOptions[0];
+        const defaultVisitType = visitTypeOptions.find(v => v.value === 'W') || visitTypeOptions[0];
+        const defaultPttype = pttypeOptions.find(p => p.value === '10') || pttypeOptions[0];
 
-        // setFormData({
-        //     visitDate: new Date().toISOString().split('T')[0],
-        //     visitTime: '',
-        //     visitType: defaultVisitType?.value || '',
-        //     pttype: defaultPttype?.value || '',
-        //     pttypeName: defaultPttype?.label.split(' - ')[1] || '',
-        //     chiefComplaint: '',
-        //     department: '',
-        //     spclty: '',
-        //     cid: '',
-        //     patientType: 'general',
-        //     timeType: 'intime',
-        //     urgency: 'normal',
-        //     patientStatus: 'walkin',
-        // });
+        setFormData({
+            visitDate: new Date().toISOString().split('T')[0],
+            visitTime: '',
+            visitType: defaultVisitType?.value || '',
+            pttype: defaultPttype?.value || '',
+            pttypeName: defaultPttype?.label.split(' - ')[1] || '',
+            chiefComplaint: '',
+            department: '',
+            spclty: '',
+            cid: '',
+            patientType: 'general',
+            timeType: 'intime',
+            urgency: 'normal',
+            patientStatus: 'walkin',
+        });
     };
 
     return (
@@ -870,6 +869,7 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
                         {/* Desktop Action Buttons */}
                         <div className="hidden lg:flex gap-3 pt-4">
                             <button
+                                type="button"
                                 onClick={handleClear}
                                 className="px-6 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors font-medium flex items-center gap-2"
                             >
@@ -904,6 +904,7 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
             <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4 lg:hidden z-40">
                 <div className="flex gap-3 max-w-lg mx-auto">
                     <button
+                        type="button"
                         onClick={handleClear}
                         className="px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl transition-colors"
                     >

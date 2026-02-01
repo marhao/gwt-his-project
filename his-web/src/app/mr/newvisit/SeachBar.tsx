@@ -1,37 +1,8 @@
 "use client"
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-    Calendar,
-    Clock,
-    Save,
-    X,
-    FileText,
-    AlertCircle,
-    User,
-    Lock,
-    Unlock,
-    Camera,
-    Trash2,
-    ChevronDown,
-    ChevronUp,
-    Phone,
-    MapPin,
-    CreditCard,
-    Stethoscope,
-    Building2,
-    ClipboardList,
-    Shield,
-    Activity,
-    QrCode,
-    Scan,
-    History,
-    MoreVertical,
-    Check,
-    ArrowLeft,
-    Loader2,
-} from 'lucide-react';
+import { QrCode } from 'lucide-react';
 import { SearchablePatientSelect } from '@/components/ui';
 import { SmartCardButton } from '@/components/ui/SmartCardButton';
 import { PatientListItem } from '@/types/patient.types';
@@ -58,22 +29,32 @@ interface Patient {
 
 type SearchBarProps = {
     pttypeOptions: any[];
+    reset: boolean;
     onSuccess: (patient: Patient) => void;
 }
 
-const SeachBar = ({ pttypeOptions, onSuccess }: SearchBarProps) => {
+const SeachBar = ({ pttypeOptions, reset, onSuccess }: SearchBarProps) => {
     const router = useRouter();
     const [searchHn, setSearchHn] = useState('')
     const [selectedPatientItem, setSelectedPatientItem] = useState<PatientListItem | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
-  // Patient data
+    /** Patient data */
     const [patient, setPatient] = useState<Patient | null>(null);
 
-  // Smart Card photo (fallback when no photo in DB)
+    /** Smart Card photo (fallback when no photo in DB) */
     const [smartCardPhoto, setSmartCardPhoto] = useState<string | null>(null);
 
-    // Handle patient selection from search
+    /** Clear searchbar's states */
+    useEffect(() => {
+        if (reset) {
+            setSearchHn('');
+            setSelectedPatientItem(null);
+            setSmartCardPhoto(null);
+        }
+    }, [reset])
+
+    /** Handle patient selection from search */
     const handlePatientSelect = async (
         hn: string, 
         patientItem: PatientListItem | null,

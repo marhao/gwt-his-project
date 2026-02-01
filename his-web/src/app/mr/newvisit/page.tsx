@@ -46,6 +46,7 @@ export default function OpdNewVisitResponsive() {
     const { pttypeOptions, isLoading: lookupsLoading, error: lookupsError } = useOpdVisitLookups();
     const [currentTime, setCurrentTime] = useState(new Date());
     const [showMoreActions, setShowMoreActions] = useState(false);
+    const [clearSearchbar, setClearSearchbar] = useState(false);
     // Patient data
     const [patient, setPatient] = useState<Patient | null>(null);
 
@@ -54,10 +55,6 @@ export default function OpdNewVisitResponsive() {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
         return () => clearInterval(timer);
     }, []);
-
-    const clearSearchbar = () => {
-        console.log('clear search bar...');
-    }
 
     // ==========================================
     // Loading State
@@ -167,6 +164,7 @@ export default function OpdNewVisitResponsive() {
                             onSuccess={(patient) => {
                                 setPatient(patient);
                             }}
+                            reset={clearSearchbar}
                         />
 
                         {/* Date/Time Bar - Mobile Only */}
@@ -214,7 +212,7 @@ export default function OpdNewVisitResponsive() {
                     onClear={() => {
                         setPatient(null)
                         // TODO: clear search bar
-                        clearSearchbar()
+                        setClearSearchbar(true)
                     }}
                 />
             </div>
