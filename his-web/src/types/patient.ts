@@ -84,6 +84,7 @@ export interface PatientNewVisit {
     bloodType?: string;
     allergies?: string[];
     lastVisit?: string;
+    pttype: string;
     pttypeName?: string;
     photo: string | null;
   }

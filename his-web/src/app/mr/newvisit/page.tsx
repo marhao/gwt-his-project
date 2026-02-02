@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
     Calendar,
     Clock,
@@ -23,6 +23,7 @@ import { type PatientNewVisit as Patient } from '@/types/patient'
 // ============================================
 export default function OpdNewVisitResponsive() {
     const router = useRouter();
+    const searchParams = useSearchParams();
 
     // ==========================================
     // Lookup data from API
@@ -144,6 +145,7 @@ export default function OpdNewVisitResponsive() {
 
                         {/* Main Search Row */}
                         <SeachBar
+                            hn={searchParams.get('hn') || ''}
                             pttypeOptions={pttypeOptions}
                             onSuccess={(patient) => {
                                 setPatient(patient);

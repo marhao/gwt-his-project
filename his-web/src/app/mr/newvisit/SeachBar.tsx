@@ -11,22 +11,39 @@ import { patientApi, patientImageApi } from '@/lib/api';
 import { type PatientNewVisit as Patient } from '@/types/patient'
 
 type SearchBarProps = {
+    hn?: string;
     pttypeOptions: any[];
     reset: boolean;
     onSuccess: (patient: Patient) => void;
 }
 
-const SeachBar = ({ pttypeOptions, reset, onSuccess }: SearchBarProps) => {
+const SeachBar = ({ hn, pttypeOptions, reset, onSuccess }: SearchBarProps) => {
     const router = useRouter();
     const [searchHn, setSearchHn] = useState('')
     const [selectedPatientItem, setSelectedPatientItem] = useState<PatientListItem | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-
     /** Patient data */
     const [patient, setPatient] = useState<Patient | null>(null);
-
     /** Smart Card photo (fallback when no photo in DB) */
     const [smartCardPhoto, setSmartCardPhoto] = useState<string | null>(null);
+
+    /** ดึงข้อมูลผู้ป่วย หากมี query params { hn } (กรณีส่งตรวจจากหน้าทะเบียนผู้ป่วย) */
+    useEffect(() => {
+        if (hn && hn !== '') {
+            const initialPatientData = async (hn: string, cardPhoto?: string | null) => {
+                const data = await fetchPatient(hn, cardPhoto);
+
+                if (data) {
+                    setSearchHn(`${data.hn} - ${data.name}`);
+                    // setSelectedPatientItem(data);
+
+                    onSuccess(data);
+                }
+            }
+
+            initialPatientData(hn);
+        }
+    }, [hn]);
 
     /** Clear searchbar's states */
     useEffect(() => {
@@ -37,25 +54,13 @@ const SeachBar = ({ pttypeOptions, reset, onSuccess }: SearchBarProps) => {
         }
     }, [reset])
 
-    /** Handle patient selection from search */
-    const handlePatientSelect = async (
-        hn: string, 
-        patientItem: PatientListItem | null,
-        cardPhoto?: string | null
-    ) => {
-        setSearchHn(hn);
-        setSelectedPatientItem(patientItem);
-
-        // Store smart card photo for fallback
-        if (cardPhoto) {
-            setSmartCardPhoto(cardPhoto);
-        }
-
-        if (!hn || !patientItem) {
-            setPatient(null);
-            return;
-        }
-
+    /**
+     * function สำหรับดึงข้อมูลผู้ป้วยด้วย HN และ return เป็น Promise ชนิด PatientNewVisit
+     * @param string hn
+     * @param string cardPhoto 
+     * @returns Promise ชนิด PatientNewVisit  | null | undefined
+     */
+    const fetchPatient = async (hn: string, cardPhoto?: string | null): Promise<Patient | null | undefined> => {
         setIsLoading(true);
 
         try {
@@ -87,7 +92,7 @@ const SeachBar = ({ pttypeOptions, reset, onSuccess }: SearchBarProps) => {
                 const patientPttype = pttypeOptions.find(p => p.value === detail.pttype);
                 const _pttypeName = patientPttype?.label.split(' - ')[1] || detail.pttypeName || '-';
 
-                onSuccess({
+                return ({
                     hn: detail.hn,
                     name: detail.fullName,
                     gender: String(detail.sex) === '1' ? 'ชาย' : String(detail.sex) === '2' ? 'หญิง' : '-',
@@ -106,9 +111,33 @@ const SeachBar = ({ pttypeOptions, reset, onSuccess }: SearchBarProps) => {
             }
         } catch (error) {
             console.error('Error fetching patient details:', error);
+            return null;
         } finally {
             setIsLoading(false);
         }
+    }
+
+    /** Handle patient selection from search */
+    const handlePatientSelect = async (
+        hn: string, 
+        patientItem: PatientListItem | null,
+        cardPhoto?: string | null
+    ) => {
+        setSearchHn(hn);
+        setSelectedPatientItem(patientItem);
+
+        // Store smart card photo for fallback
+        if (cardPhoto) {
+            setSmartCardPhoto(cardPhoto);
+        }
+
+        if (!hn || !patientItem) {
+            setPatient(null);
+            return;
+        }
+
+        const data = await fetchPatient(hn, cardPhoto);
+        onSuccess(data!)
     };
 
     const handleNewPatientFromCard = (cardData: SmartCardData) => {
