@@ -37,9 +37,9 @@ import { safeZodResolver } from '@/lib/zod';
 import { useOpdVisitLookups } from '@/hooks/useOpdVisitLookups';
 import PatientCard from '@/components/features/patient/PatientCard';
 import CollapsibleSection from '@/components/ui/CollapsibleSection';
-import FormField from '@/components/ui/Forms/FormField';
+import FormField from '@/components/ui/forms/FormField';
 import CustomSelect from '@/components/ui/CustomSelect';
-import NHSOButon from '@/components/ui/Forms/์NHSOButon';
+import NHSOButon from '@/components/ui/forms/์NHSOButon';
 import { type PatientNewVisit as Patient } from '@/lib/types/patient'
 
 const formSchema = z.object({
