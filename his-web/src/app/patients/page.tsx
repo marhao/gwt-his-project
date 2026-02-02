@@ -50,7 +50,7 @@ import {
 } from '@/components/ui/context-menu';
 import { ConfirmDialog, useConfirmDialog } from '@/components/ui/confirm-dialog';
 import DatePicker from '@/components/ui/date-picker/DatePicker';
-import { PatientListItem, PatientSearchParams, PatientStats } from '@/types/patient';
+import { PatientListItem, PatientSearchParams, PatientStats } from '@/lib/types/patient';
 import { usePatientList, usePatientStats, usePttypes } from '@/hooks';
 import { patientApi } from '@/lib/api';
 

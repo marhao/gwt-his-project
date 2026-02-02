@@ -36,7 +36,7 @@
         "./src/hooks/*"
       ],
       "@/types/*": [
-        "./src/types/*"
+        "src/lib/types/*"
       ],
       "@/config/*": [
         "./src/config/*"

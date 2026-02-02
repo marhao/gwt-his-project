@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save } from 'lucide-react';
 import { AdminLayout } from '@/components/layout';
 import { menuApi } from '@/lib/api';
-import { MenuItem } from '@/types';
+import { MenuItem } from '@/lib/types';
 import { getIcon } from '@/components/ui';
 import CustomSelect from '@/components/ui/CustomSelect';
 import { IconPicker } from '@/components/settings/menus/IconPicker';

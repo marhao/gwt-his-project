@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { MenuItem } from '@/types';
+import { MenuItem } from '@/lib/types';
 import { menuApi } from '@/lib/api';
 import { useAuth } from './AuthProvider';
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { MenuItem } from '@/types';
+import { MenuItem } from '@/lib/types';
 import { menuApi } from '@/lib/api';
 
 interface UseMenuReturn {

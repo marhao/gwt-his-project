@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import { QrCode } from 'lucide-react';
 import { SearchablePatientSelect } from '@/components/ui';
 import { SmartCardButton } from '@/components/ui/SmartCardButton';
-import { PatientListItem } from '@/types/patient';
+import { PatientListItem } from '@/lib/types/patient';
 import { SmartCardData } from '@/hooks/useSmartCardReader';
 import { patientApi, patientImageApi } from '@/lib/api';
-import { type PatientNewVisit as Patient } from '@/types/patient'
+import { type PatientNewVisit as Patient } from '@/lib/types/patient'
 
 type SearchBarProps = {
     hn?: string;

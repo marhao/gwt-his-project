@@ -40,7 +40,7 @@ import CollapsibleSection from '@/components/ui/CollapsibleSection';
 import FormField from '@/components/ui/Forms/FormField';
 import CustomSelect from '@/components/ui/CustomSelect';
 import NHSOButon from '@/components/ui/Forms/์NHSOButon';
-import { type PatientNewVisit as Patient } from '@/types/patient'
+import { type PatientNewVisit as Patient } from '@/lib/types/patient'
 
 const formSchema = z.object({
     // hn: z.string().min(7),

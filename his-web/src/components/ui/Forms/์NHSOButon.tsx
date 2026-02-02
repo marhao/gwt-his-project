@@ -5,7 +5,7 @@ import { Shield } from 'lucide-react';
 import { nhsoApi } from '@/lib/api/index';
 import { NhsoLoginModal, NhsoRightsModal } from '@/components/nhso';
 import type { NhsoPersonalFund } from '@/lib/api/types/nhso';
-import { NHSO_TO_PTTYPE_MAPPING } from '@/lib/constants';
+import { NHSO_TO_PTTYPE_MAPPING } from '@/lib/constants/nhso';
 
 type NHSOButonProps = {
     cid: string | null;

@@ -2,7 +2,7 @@
 
 import { FC, useState, useCallback } from 'react';
 import { getIcon } from '@/components/ui';
-import { QuickAction } from '@/types';
+import { QuickAction } from '@/lib/types';
 import { Command } from 'lucide-react';
 
 // Extended QuickAction type

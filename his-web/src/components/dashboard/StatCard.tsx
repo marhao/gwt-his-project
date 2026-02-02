@@ -3,7 +3,7 @@
 import { FC, useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Minus, Activity, RefreshCw } from 'lucide-react';
 import { getIcon } from '@/components/ui';
-import { StatCard as StatCardType } from '@/types';
+import { StatCard as StatCardType } from '@/lib/types';
 
 // Extended stat type for HIS
 interface HISStatCard extends StatCardType {

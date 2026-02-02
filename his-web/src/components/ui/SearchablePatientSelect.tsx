@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, ChevronDown, Loader2, X, Search, AlertCircle } from 'lucide-react';
 import { patientApi } from '@/lib/api';
-import { PatientListItem } from '@/types/patient';
+import { PatientListItem } from '@/lib/types/patient';
 
 export interface SearchablePatientSelectProps {
   value: string;

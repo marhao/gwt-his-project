@@ -1,4 +1,4 @@
-import { StatCard, Appointment, QuickAction } from '@/types';
+import { StatCard, Appointment, QuickAction } from '@/lib/types';
 
 export const statsConfig: StatCard[] = [
   {

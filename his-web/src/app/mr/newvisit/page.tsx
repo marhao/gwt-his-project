@@ -16,7 +16,7 @@ import { AdminLayout } from '@/components/layout';
 import { useOpdVisitLookups } from '@/hooks/useOpdVisitLookups';
 import SeachBar from './SeachBar';
 import FormNewVisit from './Form';
-import { type PatientNewVisit as Patient } from '@/types/patient'
+import { type PatientNewVisit as Patient } from '@/lib/types/patient'
 
 // ============================================
 // Main Component
