@@ -4,33 +4,16 @@ import { useEffect, useState } from 'react';
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import {
-    Calendar,
-    Clock,
     Save,
-    X,
-    FileText,
     AlertCircle,
-    User,
     Lock,
     Unlock,
-    Camera,
     Trash2,
-    ChevronDown,
-    ChevronUp,
-    Phone,
-    MapPin,
     CreditCard,
     Stethoscope,
-    Building2,
-    ClipboardList,
     Shield,
     Activity,
-    QrCode,
-    Scan,
-    History,
-    MoreVertical,
     Check,
-    ArrowLeft,
     Loader2,
 } from 'lucide-react';
 import { safeZodResolver } from '@/lib/zod';
@@ -146,28 +129,34 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
     // ==========================================
     useEffect(() => {
         if (visitTypeOptions.length > 0 && !formData.visitType) {
-        // Find default visit type (e.g., 'W' for Walk-in or first option)
-        const defaultVisitType = visitTypeOptions.find(v => v.value === 'W') || visitTypeOptions[0];
-        if (defaultVisitType) {
-            setFormData(prev => ({
-                ...prev,
-                visitType: defaultVisitType.value,
-            }));
-        }
+            // Find default visit type (e.g., 'W' for Walk-in or first option)
+            const defaultVisitType = visitTypeOptions.find(v => v.value === 'W') || visitTypeOptions[0];
+            if (defaultVisitType) {
+                setValue("visitType", defaultVisitType.value);
+                setFormData(prev => ({
+                    ...prev,
+                    visitType: defaultVisitType.value,
+                }));
+            }
         }
     }, [lookups.visitTypeOptions, formData.visitType]);
 
     useEffect(() => {
         if (pttypeOptions.length > 0 && !formData.pttype) {
-        // Find default pttype (e.g., '10' for ชำระเงินเอง or first option)
-        const defaultPttype = pttypeOptions.find(p => p.value === '10') || pttypeOptions[0];
-        if (defaultPttype) {
-            setFormData(prev => ({
-            ...prev,
-            pttype: defaultPttype.value,
-            pttypeName: defaultPttype.label.split(' - ')[1] || defaultPttype.label,
-            }));
-        }
+            // Find default pttype (e.g., '10' for ชำระเงินเอง or first option)
+            const defaultPttype = pttypeOptions.find(p => p.value === '10') || pttypeOptions[0];
+            if (defaultPttype) {
+                const _pttypeName = defaultPttype.label.split(' - ')[1] || defaultPttype.label;
+
+                setValue("pttype", defaultPttype.value);
+                setValue("pttypeName", _pttypeName);
+
+                setFormData(prev => ({
+                    ...prev,
+                    pttype: defaultPttype.value,
+                    pttypeName: _pttypeName,
+                }));
+            }
         }
     }, [lookups.pttypeOptions, formData.pttype]);
 
