@@ -465,7 +465,11 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
                         >
                             <div className="space-y-4">
                                 {/* Visit Type */}
-                                <FormField label="ประเภทการมา">
+                                <FormField
+                                    label="ประเภทการมา"
+                                    required
+                                    error={errors.visitType?.message}
+                                >
                                     <div className="flex gap-2">
                                         <input
                                             type="text"
@@ -486,13 +490,14 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
                                             />
                                         </div>
                                     </div>
-                                    {errors.visitType && (
-                                        <p className="mt-2 text-sm text-critical-500">{errors.visitType.message}</p>
-                                    )}
                                 </FormField>
 
                                 {/* Rights */}
-                                <FormField label="สิทธิการรักษา" required>
+                                <FormField
+                                    label="สิทธิการรักษา"
+                                    required
+                                    error={errors.pttype?.message}
+                                >
                                     <div className="flex flex-col sm:flex-row gap-2">
                                         <input
                                             type="text"
@@ -555,16 +560,17 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
                             title="อาการสำคัญ"
                             icon={<Activity size={18} />}
                         >
-                            <FormField label="อาการสำคัญ (Chief Complaint)" required>
+                            <FormField
+                                label="อาการสำคัญ (Chief Complaint)"
+                                required
+                                error={errors.chiefComplaint?.message}
+                            >
                                 <textarea
                                     {...register("chiefComplaint")}
                                     placeholder="ระบุอาการสำคัญที่นำผู้ป่วยมาพบแพทย์..."
                                     rows={3}
                                     className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 resize-none"
                                 />
-                                {errors.chiefComplaint && (
-                                    <p className="mt-2 text-sm text-critical-500">{errors.chiefComplaint.message}</p>
-                                )}
                             </FormField>
                         </CollapsibleSection>
 
@@ -575,7 +581,11 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
                         >
                             <div className="space-y-4">
                                 {/* Department */}
-                                <FormField label="ห้องตรวจ" required>
+                                <FormField
+                                    label="ห้องตรวจ"
+                                    required
+                                    error={errors.department?.message}
+                                >
                                     <div className="flex gap-2">
                                         <input
                                             type="text"
@@ -597,13 +607,14 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
                                             />
                                         </div>
                                     </div>
-                                    {errors.department && (
-                                        <p className="mt-2 text-sm text-critical-500">{errors.department.message}</p>
-                                    )}
                                 </FormField>
 
                                 {/* Specialty */}
-                                <FormField label="แผนก" required>
+                                <FormField
+                                    label="แผนก"
+                                    required
+                                    error={errors.spclty?.message}
+                                >
                                     <div className="flex gap-2">
                                         <input
                                             type="text"

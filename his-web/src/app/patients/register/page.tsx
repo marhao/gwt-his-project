@@ -34,11 +34,6 @@ import {
 } from 'lucide-react';
 import { usePatientDetail } from '@/hooks';
 import { usePatientImageManager } from '@/hooks/usePatientImages';
-import { PatientImageUpload } from '@/components/ui/patient-image';
-import { AdminLayout } from '@/components/layout';
-import { ConfirmDialog, useConfirmDialog } from '@/components/ui/confirm-dialog';
-import CustomSelect from '@/components/ui/CustomSelect';
-import DatePicker from '@/components/ui/date-picker';
 import {
   PatientDetail,
   PatientFormData,
@@ -48,6 +43,12 @@ import {
   BLOOD_RH_OPTIONS,
   MARRY_STATUS_OPTIONS,
 } from '@/lib/types/patient';
+import { PatientImageUpload } from '@/components/ui/patient-image';
+import { AdminLayout } from '@/components/layout';
+import { ConfirmDialog, useConfirmDialog } from '@/components/ui/confirm-dialog';
+import CustomSelect from '@/components/ui/CustomSelect';
+import DatePicker from '@/components/ui/date-picker';
+import FormField from '@/components/ui/forms/FormField';
 
 // ============================================
 // Mock Data
@@ -196,45 +197,6 @@ const FormSection: React.FC<FormSectionProps> = ({
     </div>
   );
 };
-
-// Form Field Component
-interface FormFieldProps {
-  label: string;
-  required?: boolean;
-  error?: string;
-  hint?: string;
-  children: React.ReactNode;
-  className?: string;
-}
-
-const FormField: React.FC<FormFieldProps> = ({
-  label,
-  required,
-  error,
-  hint,
-  children,
-  className = '',
-}) => (
-  <div className={`space-y-1.5 ${className}`}>
-    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-      {label}
-      {required && <span className="text-red-500 ml-1">*</span>}
-    </label>
-    {children}
-    {hint && !error && (
-      <p className="text-xs text-slate-400 flex items-center gap-1">
-        <Info size={12} />
-        {hint}
-      </p>
-    )}
-    {error && (
-      <p className="text-xs text-red-500 flex items-center gap-1">
-        <AlertCircle size={12} />
-        {error}
-      </p>
-    )}
-  </div>
-);
 
 // Input Component
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
