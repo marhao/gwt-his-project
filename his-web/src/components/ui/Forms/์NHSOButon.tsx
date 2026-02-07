@@ -129,6 +129,7 @@ const NHSOButon = ({ cid, patientName, onClick, onSuccess }: NHSOButonProps) => 
     return (
         <>
             <button
+                type="button"
                 onClick={handleNHSO}
                 disabled={!canCheckNhso}
                 className={`
