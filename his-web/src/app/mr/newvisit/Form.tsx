@@ -528,6 +528,9 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
                                                 /** Set สิทธิการรักษา  */
                                                 const pttypeOption = pttypeOptions.find(p => p.value === data);
                                                 if (pttypeOption) {
+                                                    setValue("pttype", data);
+                                                    setValue("pttypeName", pttypeOption?.label.split(' - ')[1] || '');
+
                                                     setFormData(prev => ({
                                                         ...prev,
                                                         pttype: data,

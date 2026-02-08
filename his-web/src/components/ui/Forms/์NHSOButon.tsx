@@ -117,9 +117,9 @@ const NHSOButon = ({ cid, patientName, onClick, onSuccess }: NHSOButonProps) => 
      */
     const handleApplyNhsoRights = (rights: NhsoPersonalFund) => {
         // Map NHSO rights to pttype if possible
-        const mappedPttype = rights.mainInscl && Object.keys(NHSO_TO_PTTYPE_MAPPING).find(pt => pt === rights.mainInscl?.rightId);
+        const mappedPttype = rights.mainInscl && Object.entries(NHSO_TO_PTTYPE_MAPPING).find(pt => pt[0] === rights.mainInscl?.rightId);
         if (mappedPttype) {
-            onSuccess(mappedPttype);
+            onSuccess(mappedPttype[1]);
         }
 
         // Close modal
