@@ -188,7 +188,8 @@ export function NhsoLoginModal({ isOpen, onClose, onSuccess }: NhsoLoginModalPro
               ยกเลิก
             </button>
             <button
-              type="submit"
+              type="button"
+              onClick={handleSubmit}
               disabled={isLoading || !username.trim() || !password.trim()}
               className="
                 flex-1 px-4 py-3 
