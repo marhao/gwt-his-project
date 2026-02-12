@@ -24,15 +24,14 @@ import FormField from '@/components/ui/forms/FormField';
 import CustomSelect from '@/components/ui/CustomSelect';
 import NHSOButon from '@/components/ui/forms/์NHSOButon';
 import { type PatientNewVisit as Patient } from '@/lib/types/patient'
+import { type VisitFormData } from '@/lib/types/visit';
 
 const formSchema = z.object({
-    // hn: z.string().min(7),
-    cid: z.string().optional(),
+    hn: z.string().min(7),
     visitDate: z.string().optional(),
     visitTime: z.string().optional(),
     visitType: z.string().nonempty(),
     pttype: z.string().nonempty(),
-    pttypeName: z.string().optional(),
     chiefComplaint: z.string().nonempty(),
     department: z.string().nonempty(),
     spclty: z.string().nonempty(),
@@ -43,22 +42,6 @@ const formSchema = z.object({
 });
 
 type FormSchemaType = z.infer<typeof formSchema>;
-
-interface FormData {
-    cid: string;
-    visitDate: string;
-    visitTime: string;
-    visitType: string;
-    pttype: string;
-    pttypeName: string;
-    chiefComplaint: string;
-    department: string;
-    spclty: string;
-    patientType: string; //ประเภทผู้ป่วย
-    urgency: string; //ความเร่งด่วน
-    patientStatus: string; //สภาพผู้ป่วย
-    timeType: string; //ประเภทเวลา
-}
 
 type FormNewVisitProps = {
     patient: Patient | null;
@@ -76,8 +59,8 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
     const [isLoading, setIsLoading] = useState(false)
     const [saving, setSaving] = useState(false);
     // Form data
-    const [formData, setFormData] = useState<FormData>({
-        cid: '',
+    const [formData, setFormData] = useState<VisitFormData>({
+        hn: '',
         visitDate: new Date().toISOString().split('T')[0],
         visitTime: '',
         visitType: '',
@@ -95,19 +78,18 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
     const { register, setValue, reset, handleSubmit, formState: { errors }} = useForm<FormSchemaType>({
         resolver: safeZodResolver(formSchema),
         defaultValues: {
-            cid: '',
+            hn: '',
             visitDate: new Date().toISOString().split('T')[0],
             visitTime: '',
             visitType: '',
             pttype: '',
-            pttypeName: '',
             chiefComplaint: '',
             department: '',
             spclty: '',
             patientType: 'general',
-            timeType: 'intime',
             urgency: 'normal',
             patientStatus: 'walkin',
+            timeType: 'intime',
         }
     });
 
@@ -149,8 +131,6 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
                 const _pttypeName = defaultPttype.label.split(' - ')[1] || defaultPttype.label;
 
                 setValue("pttype", defaultPttype.value);
-                setValue("pttypeName", _pttypeName);
-
                 setFormData(prev => ({
                     ...prev,
                     pttype: defaultPttype.value,
@@ -162,13 +142,14 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
 
     useEffect(() => {
         if (patient) {
-            setValue("cid", patient.cid)
+            setValue("hn", patient.hn)
             setValue("pttype", patient.pttype || '')
-            setValue("pttypeName", patient.pttypeName || '')
 
             setFormData((prev) => ({
                 ...prev,
+                hn: patient.hn || '',
                 cid: patient.cid || '',
+                patient: patient || null,
                 pttype: patient.pttype || prev.pttype,
                 pttypeName: patient.pttypeName || prev.pttypeName,
             }));
@@ -221,6 +202,7 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
         const defaultPttype = pttypeOptions.find(p => p.value === '10') || pttypeOptions[0];
 
         setFormData({
+            hn: '',
             visitDate: new Date().toISOString().split('T')[0],
             visitTime: '',
             visitType: defaultVisitType?.value || '',
@@ -253,7 +235,9 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
                                 <div className="hidden lg:block bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
                                     {/* Header */}
                                     <div className="px-4 py-3 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-                                        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">ตัวเลือกด่วน</h3>
+                                        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                            ตัวเลือกด่วน
+                                        </h3>
                                     </div>
 
                                     <div className="p-4 space-y-5">
@@ -512,7 +496,6 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
                                                 onChange={(val) => {
                                                     const selected = pttypeOptions.find((o) => o.value === val);
                                                     setValue("pttype", val);
-                                                    setValue("pttypeName", selected?.label.split(' - ')[1] || '');
                                                     setFormData({
                                                         ...formData,
                                                         pttype: val,
@@ -524,16 +507,25 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
                                         <NHSOButon
                                             cid={patient && patient?.cid}
                                             patientName={patient && patient?.name || ''}
-                                            onSuccess={(data) => {
+                                            onSuccess={(mapping, right) => {
+                                                console.log(right);
+                                                
                                                 /** Set สิทธิการรักษา  */
-                                                const pttypeOption = pttypeOptions.find(p => p.value === data);
+                                                const pttypeOption = pttypeOptions.find(p => p.value === mapping);
                                                 if (pttypeOption) {
-                                                    setValue("pttype", data);
-                                                    setValue("pttypeName", pttypeOption?.label.split(' - ')[1] || '');
-
+                                                    setValue("pttype", mapping);
                                                     setFormData(prev => ({
                                                         ...prev,
-                                                        pttype: data,
+                                                        ptRight: {
+                                                            hn: prev.hn,
+                                                            pttype: mapping,
+                                                            pttypeName: pttypeOption.label.split(' - ')[1] || pttypeOption.label,
+                                                            hospmain: right.hospMain?.hospcode || '',
+                                                            hospsub: right.hospSub?.hospcode || '',
+                                                            beginDate: right.createDate,
+                                                            expireDate: right.expireDateTime
+                                                        },
+                                                        pttype: mapping,
                                                         pttypeName: pttypeOption.label.split(' - ')[1] || pttypeOption.label,
                                                     }));
                                                 }
