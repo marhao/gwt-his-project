@@ -16,7 +16,7 @@ import {
     Check,
     Loader2,
 } from 'lucide-react';
-import { safeZodResolver } from '@/lib/zod';
+import { safeZodResolver } from '@/lib/utils/zod';
 import { useOpdVisitLookups } from '@/hooks/useOpdVisitLookups';
 import PatientCard from '@/components/features/patient/PatientCard';
 import CollapsibleSection from '@/components/ui/CollapsibleSection';
