@@ -32,7 +32,10 @@ import {
   FileText,
   RefreshCw,
 } from 'lucide-react';
-import { usePatientDetail } from '@/hooks';
+import { type FieldErrors, useForm } from 'react-hook-form';
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod';
+import { usePatientDetail, useProvinces, useDistricts, useSubdistricts, useThaiAddress } from '@/hooks';
 import { usePatientImageManager } from '@/hooks/usePatientImages';
 import {
   PatientDetail,
@@ -45,13 +48,18 @@ import {
 } from '@/lib/types/patient';
 import { formatCid } from '@/lib/utils/string-format';
 import { formatSmartCard2DbDate } from '@/lib/utils/date-time';
+import { safeZodResolver } from '@/lib/utils/zod';
+import { patientApi } from '@/lib/api';
+import { useSmartCardReader, SmartCardData } from '@/hooks/useSmartCardReader';
 import { PatientImageUpload } from '@/components/ui/patient-image';
 import { AdminLayout } from '@/components/layout';
 import { ConfirmDialog, useConfirmDialog } from '@/components/ui/confirm-dialog';
 import CustomSelect from '@/components/ui/CustomSelect';
 import DatePicker from '@/components/ui/date-picker';
 import FormField from '@/components/ui/forms/FormField';
-import { useSmartCardReader, SmartCardData } from '@/hooks/useSmartCardReader';
+import FormSection from '@/components/ui/forms/FormSection';
+import AllergyInput from '@/components/ui/forms/AllergyInput';
+import Input from '@/components/ui/forms/Input';
 
 // ============================================
 // Mock Data
@@ -111,13 +119,6 @@ const mockPatient: PatientDetail = {
   photo: null,
 };
 
-// Options
-const provinceOptions = [
-  { value: '30', label: 'นครราชสีมา' },
-  { value: '10', label: 'กรุงเทพมหานคร' },
-  { value: '40', label: 'ขอนแก่น' },
-];
-
 const pttypeOptions = [
   { value: '10', label: '10 - ชำระเงินเอง' },
   { value: 'UCS', label: 'UCS - บัตรทอง 30 บาท' },
@@ -152,149 +153,42 @@ const relationOptions = [
   { value: 'other', label: 'อื่นๆ' },
 ];
 
-// ============================================
-// Sub Components
-// ============================================
+const patientSchema = z.object({
+  pname: z.string().nonempty("กรุณาระบุคำนำหน้า"),
+  fname: z.string().nonempty("กรุณาระบุชื่อ"),
+  lname: z.string().nonempty("กรุณาระบุสกุล"),
+  sex: z.string().nonempty("กรุณาระบุเพศ"),
+  birthday: z.string().nonempty("กรุณาระบุวันที่เกิด"),
+  cid: z.string().nonempty("กรุณาระบุเลขบัตรประชาชน"),
+  occupation: z.string().optional().default('000'),
+  nationality: z.string().nonempty("กรุณาระบุสัญชาติ"),
+  religion: z.string().nonempty("กรุณาระบุศาสนา"),
+  marrystatus: z.string().nonempty("กรุณาระบุสถานภาพ"),
+  pttype: z.string().nonempty("กรุณาระบุสิทธิการรักษา"),
+  bloodgrp: z.string().nonempty("กรุณาระบุหมู่เลือด"),
+  bloodgroupRh: z.string().optional().default(''),
+  addrpart: z.string().nonempty("กรุณาระบุบ้านเลขที่"),
+  moopart: z.string().optional().default(''),
+  road: z.string().optional().default(''),
+  tmbpart: z.string().optional().default(''),
+  amppart: z.string().nonempty("กรุณาระบุอำเภอ"),
+  chwpart: z.string().nonempty("กรุณาระบุจังหวัด"),
+  poCode: z.string().nonempty("กรุณาระบุรหัสไปรษณีย์").min(5, "รหัสไปรษณีย์ต้องมี 5 ตัว").max(5, "รหัสไปรษณีย์ต้องมี 5 ตัว"),
+  mobilePhone: z.string().nonempty("กรุณาระบุโทรศัพท์มือถือ"),
+  hometel: z.string().optional().default(''),
+  email: z.string().optional().default(''),
+  drugallergy: z.string().optional().default(''),
+  g6pd: z.string().optional().default('N'),
+  informname: z.string().nonempty("กรุณาระบุชื่อผู้ติดต่อ"),
+  informtel: z.string().nonempty("กรุณาระบุเบอร์โทรศัพท์ผู้ติดต่อ"),
+  informrelation: z.string().nonempty("กรุณาระบุความสัมพันธ์ผู้ติดต่อ"),
+  fathername: z.string().optional().default(''),
+  mathername: z.string().optional().default(''),
+  spsname: z.string().optional().default(''),
+});
 
-// Form Section Component
-interface FormSectionProps {
-  title: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-  collapsible?: boolean;
-  defaultOpen?: boolean;
-  badge?: React.ReactNode;
-}
+type PatientSchemaType = z.infer<typeof patientSchema>
 
-const FormSection: React.FC<FormSectionProps> = ({
-  title,
-  icon,
-  children,
-  collapsible = true,
-  defaultOpen = true,
-  badge,
-}) => {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-
-  return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-      <button
-        type="button"
-        onClick={() => collapsible && setIsOpen(!isOpen)}
-        className={`w-full px-4 py-3 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 ${collapsible ? 'cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800' : 'cursor-default'} transition-colors`}
-      >
-        <div className="flex items-center gap-3">
-          <span className="text-slate-500 dark:text-slate-400">{icon}</span>
-          <span className="font-semibold text-slate-900 dark:text-white text-sm">{title}</span>
-          {badge}
-        </div>
-        {collapsible && (
-          isOpen ? (
-            <ChevronUp size={18} className="text-slate-400" />
-          ) : (
-            <ChevronDown size={18} className="text-slate-400" />
-          )
-        )}
-      </button>
-      {isOpen && <div className="p-4">{children}</div>}
-    </div>
-  );
-};
-
-// Input Component
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  error?: boolean;
-}
-
-const Input: React.FC<InputProps> = ({ error, className = '', ...props }) => (
-  <input
-    {...props}
-    className={`
-      w-full px-4 py-2.5 
-      bg-slate-50 dark:bg-slate-800 
-      border rounded-xl text-sm
-      focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
-      transition-colors
-      ${error 
-        ? 'border-red-300 dark:border-red-500 focus:border-red-500 focus:ring-red-500/20' 
-        : 'border-slate-200 dark:border-slate-700'
-      }
-      ${props.disabled ? 'opacity-60 cursor-not-allowed' : ''}
-      ${className}
-    `}
-  />
-);
-
-// Allergy Input Component
-const AllergyInput: React.FC<{
-  allergies: string[];
-  onChange: (allergies: string[]) => void;
-}> = ({ allergies, onChange }) => {
-  const [newAllergy, setNewAllergy] = useState('');
-
-  const handleAdd = () => {
-    if (newAllergy.trim() && !allergies.includes(newAllergy.trim())) {
-      onChange([...allergies, newAllergy.trim()]);
-      setNewAllergy('');
-    }
-  };
-
-  const handleRemove = (allergy: string) => {
-    onChange(allergies.filter((a) => a !== allergy));
-  };
-
-  return (
-    <div className="space-y-3">
-      <div className="flex gap-2">
-        <Input
-          type="text"
-          value={newAllergy}
-          onChange={(e) => setNewAllergy(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAdd())}
-          placeholder="พิมพ์ชื่อยาที่แพ้..."
-          className="flex-1"
-        />
-        <button
-          type="button"
-          onClick={handleAdd}
-          disabled={!newAllergy.trim()}
-          className="px-4 py-2.5 bg-red-500 text-white rounded-xl hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          <Plus size={18} />
-        </button>
-      </div>
-      
-      {allergies.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {allergies.map((allergy) => (
-            <span
-              key={allergy}
-              className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300 rounded-lg text-sm"
-            >
-              <AlertCircle size={14} />
-              {allergy}
-              <button
-                type="button"
-                onClick={() => handleRemove(allergy)}
-                className="ml-1 hover:text-red-900 dark:hover:text-red-100"
-              >
-                <X size={14} />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-      
-      {allergies.length === 0 && (
-        <p className="text-sm text-slate-400 italic">ไม่มีประวัติแพ้ยา</p>
-      )}
-    </div>
-  );
-};
-
-// ============================================
-// Main Component
-// ============================================
 export default function PatientNewPage() {
   const router = useRouter();
   const params = useParams();
@@ -314,7 +208,7 @@ export default function PatientNewPage() {
   } = usePatientImageManager(isNew ? null : hn);
 
   const [saving, setSaving] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  // const [errors, setErrors] = useState<Record<string, string>>({});
   const [isDirty, setIsDirty] = useState(false);
   const [initialized, setInitialized] = useState(false);
   /** ======================= Smart card reader props ======================= */
@@ -356,6 +250,15 @@ export default function PatientNewPage() {
     informtel: '',
     informrelation: '',
   });
+
+  const { register, reset, setValue, watch, handleSubmit, formState: { errors }} = useForm<PatientSchemaType>({
+    resolver: safeZodResolver(patientSchema),
+  });
+
+  // Thai address lookup options
+  const { data: provinces } = useProvinces();
+  const { data: disricts } = useDistricts(watch("chwpart"));
+  const { data: subdisricts } = useSubdistricts(watch("chwpart") || '', watch("amppart") || '');
 
   const [allergies, setAllergies] = useState<string[]>([]);
   const [photo, setPhoto] = useState<string | null>(null);
@@ -483,39 +386,12 @@ export default function PatientNewPage() {
           /** ถ้ามีข้อมูลในฐานข้อมูล */
           
       } else { // กรณีอ่านบัตร Smart card จากหน้าส่งตรวจ
-        setFormData({
-          pname: data?.name_th.prefix || '',
-          fname: data?.name_th.firstname || '',
-          lname: data?.name_th.lastname || '',
-          sex: data?.gender === "1" ? 'M' : 'F',
-          birthday: data?.dob ? formatSmartCard2DbDate(data?.dob!) : '',
-          cid: data?.cid || '',
-          mobilePhone: '',
-          hometel: '',
-          email: '',
-          addrpart: '',
-          moopart: '',
-          road: '',
-          tmbpart: '',
-          amppart: '',
-          chwpart: '',
-          poCode: '',
-          bloodgrp: '',
-          bloodgroupRh: '',
-          drugallergy: '',
-          g6pd: '',
-          pttype: '',
-          nationality: 'TH',
-          religion: '',
-          occupation: '',
-          marrystatus: '',
-          fathername: '',
-          mathername: '',
-          spsname: '',
-          informname: '',
-          informtel: '',
-          informrelation: '',
-        });
+        setValue("pname", data?.name_th.prefix || '');
+        setValue("fname", data?.name_th.firstname || '');
+        setValue("lname", data?.name_th.lastname || '');
+        setValue("sex", data?.gender === "1" ? 'M' : 'F');
+        setValue("birthday", data?.dob ? formatSmartCard2DbDate(data?.dob!) : '');
+        setValue("cid", data?.cid || '');
 
         const cardPhoto = data?.photo ? `data:image/jpeg;base64,${data?.photo}` : null;
         setPhoto(cardPhoto);
@@ -531,59 +407,65 @@ export default function PatientNewPage() {
   /** ======================= Smart card reader actions ======================= */
 
   // Update form field
-  const updateField = useCallback((field: keyof PatientFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    setIsDirty(true);
-    if (errors[field]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  }, [errors]);
+  // const updateField = useCallback((field: keyof PatientFormData, value: string) => {
+  //   setFormData((prev) => ({ ...prev, [field]: value }));
+  //   setIsDirty(true);
+  //   if (errors[field]) {
+  //     setErrors((prev) => {
+  //       const newErrors = { ...prev };
+  //       delete newErrors[field];
+  //       return newErrors;
+  //     });
+  //   }
+  // }, [errors]);
 
   // Validate form
-  const validate = (): boolean => {
-    const newErrors: Record<string, string> = {};
+  // const validate = (): boolean => {
+  //   const newErrors: Record<string, string> = {};
 
-    if (!formData.pname) newErrors.pname = 'กรุณาเลือกคำนำหน้า';
-    if (!formData.fname) newErrors.fname = 'กรุณากรอกชื่อ';
-    if (!formData.lname) newErrors.lname = 'กรุณากรอกนามสกุล';
-    if (!formData.birthday) newErrors.birthday = 'กรุณาเลือกวันเกิด';
-    if (!formData.pttype) newErrors.pttype = 'กรุณาเลือกสิทธิการรักษา';
+  //   if (!formData.pname) newErrors.pname = 'กรุณาเลือกคำนำหน้า';
+  //   if (!formData.fname) newErrors.fname = 'กรุณากรอกชื่อ';
+  //   if (!formData.lname) newErrors.lname = 'กรุณากรอกนามสกุล';
+  //   if (!formData.birthday) newErrors.birthday = 'กรุณาเลือกวันเกิด';
+  //   if (!formData.pttype) newErrors.pttype = 'กรุณาเลือกสิทธิการรักษา';
 
-    if (formData.cid && formData.cid.length !== 13) {
-      newErrors.cid = 'เลขบัตรประชาชนต้องมี 13 หลัก';
-    }
+  //   if (formData.cid && formData.cid.length !== 13) {
+  //     newErrors.cid = 'เลขบัตรประชาชนต้องมี 13 หลัก';
+  //   }
 
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'รูปแบบอีเมลไม่ถูกต้อง';
-    }
+  //   if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+  //     newErrors.email = 'รูปแบบอีเมลไม่ถูกต้อง';
+  //   }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  //   setErrors(newErrors);
+  //   return Object.keys(newErrors).length === 0;
+  // };
 
   // Handle save
-  const handleSave = async () => {
-    if (!validate()) {
-      const firstError = document.querySelector('[data-error="true"]');
-      firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return;
-    }
+  const handleSave = async (data: PatientSchemaType) => {
+    // if (!validate()) {
+    //   const firstError = document.querySelector('[data-error="true"]');
+    //   firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    //   return;
+    // }
+    console.log(data);
 
-    setSaving(true);
     try {
+      setSaving(true);
+
       await new Promise((r) => setTimeout(r, 1500));
-      
+
+      /** Manipulate drugallergy data as string with delimitor (,) */
       const dataToSave = {
-        ...formData,
+        ...data,
         drugallergy: allergies.join(', '),
       };
-      
+
       console.log('Saving:', dataToSave);
-      router.push(isNew ? '/patients' : `/patients/${hn}`);
+      const response = patientApi.create(dataToSave as PatientFormData);
+      console.log(response);
+
+      // router.push(isNew ? '/patients' : `/patients/${hn}`);
     } catch (error) {
       console.error('Save failed:', error);
     } finally {
@@ -613,6 +495,10 @@ export default function PatientNewPage() {
       await uploadImage(imageData, width, height);
     }
   };
+
+  const haveErrors = (errObj: FieldErrors, checkingArr: string[]): boolean => {
+    return Object.keys(errObj).some((error => checkingArr.includes(error)));
+  }
 
   const loading = patientLoading;
 
@@ -667,7 +553,7 @@ export default function PatientNewPage() {
     <AdminLayout>
       {/* Page wrapper with contrasting background */}
       <div className="min-h-screen -m-6 p-6 bg-slate-100 dark:bg-slate-950">
-        <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-6 pb-24 lg:pb-6">
+        <form onSubmit={handleSubmit(handleSave)} className="space-y-6 pb-24 lg:pb-6">
           {/* ============================================ */}
           {/* Header */}
           {/* ============================================ */}
@@ -737,7 +623,6 @@ export default function PatientNewPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Main Form */}
             <div className="lg:col-span-2 space-y-6">
-              
               {/* Personal Information */}
               <FormSection
                 title="ข้อมูลส่วนตัว"
@@ -745,31 +630,30 @@ export default function PatientNewPage() {
                 collapsible={false}
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <FormField label="คำนำหน้า" required error={errors.pname}>
+                  <FormField label="คำนำหน้า" required error={errors.pname?.message}>
+                    <input type="hidden" {...register("pname")} />
                     <CustomSelect
                       options={PNAME_OPTIONS}
-                      value={formData.pname}
-                      onChange={(val) => updateField('pname', val)}
+                      value={watch("pname")}
+                      onChange={(val) => setValue('pname', val)}
                       placeholder="เลือก..."
                     />
                   </FormField>
 
-                  <FormField label="ชื่อ" required error={errors.fname} className="lg:col-span-1">
+                  <FormField label="ชื่อ" required error={errors.fname?.message} className="lg:col-span-1">
                     <Input
                       type="text"
-                      value={formData.fname}
-                      onChange={(e) => updateField('fname', e.target.value)}
+                      {...register("fname")}
                       placeholder="ชื่อ"
                       error={!!errors.fname}
                       data-error={!!errors.fname}
                     />
                   </FormField>
 
-                  <FormField label="นามสกุล" required error={errors.lname} className="lg:col-span-2">
+                  <FormField label="นามสกุล" required error={errors.lname?.message} className="lg:col-span-2">
                     <Input
                       type="text"
-                      value={formData.lname}
-                      onChange={(e) => updateField('lname', e.target.value)}
+                      {...register("lname")}
                       placeholder="นามสกุล"
                       error={!!errors.lname}
                       data-error={!!errors.lname}
@@ -778,13 +662,14 @@ export default function PatientNewPage() {
 
                   <FormField label="เพศ" required className="sm:col-span-1">
                     <div className="flex gap-2">
+                      <input type="hidden" {...register("sex")} />
                       {SEX_OPTIONS.map((opt) => (
                         <button
                           key={opt.value}
                           type="button"
-                          onClick={() => updateField('sex', opt.value)}
+                          onClick={() => setValue('sex', opt.value)}
                           className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                            formData.sex === opt.value
+                            watch("sex") === opt.value
                               ? opt.value === 'M'
                                 ? 'bg-blue-500 text-white'
                                 : 'bg-pink-500 text-white'
@@ -798,22 +683,23 @@ export default function PatientNewPage() {
                   </FormField>
 
                   {/* Date Picker Field */}
-                  <FormField label="วันเกิด" required error={errors.birthday}>
+                  <FormField label="วันเกิด" required error={errors.birthday?.message}>
+                    <input type="hidden" {...register("birthday")} />
                     <DatePicker
-                      value={formData.birthday}
-                      onChange={(date: string) => updateField('birthday', date)}
-                      error={errors.birthday}
+                      value={watch("birthday")}
+                      onChange={(date: string) => setValue('birthday', date)}
+                      error={errors.birthday?.message}
                       placeholder="เลือกวันเกิด"
                       disableFutureDates={true}
                       disablePastDates={false}
                     />
                   </FormField>
 
-                  <FormField label="เลขบัตรประชาชน" error={errors.cid} className="sm:col-span-2">
+                  <FormField label="เลขบัตรประชาชน" error={errors.cid?.message} className="sm:col-span-2">
                     <Input
                       type="text"
-                      value={formData.cid}
-                      onChange={(e) => updateField('cid', e.target.value.replace(/\D/g, '').slice(0, 13))}
+                      {...register("cid")}
+                      onChange={(e) => setValue('cid', e.target.value.replace(/\D/g, '').slice(0, 13))}
                       placeholder="X-XXXX-XXXXX-XX-X"
                       maxLength={13}
                       error={!!errors.cid}
@@ -822,28 +708,31 @@ export default function PatientNewPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-                  <FormField label="สัญชาติ">
+                  <FormField label="สัญชาติ" error={errors.nationality?.message}>
+                    <input type="hidden" {...register("nationality")} />
                     <CustomSelect
                       options={nationalityOptions}
-                      value={formData.nationality}
-                      onChange={(val) => updateField('nationality', val)}
+                      value={watch("nationality")}
+                      onChange={(val) => setValue('nationality', val)}
                     />
                   </FormField>
 
-                  <FormField label="ศาสนา">
+                  <FormField label="ศาสนา" error={errors.religion?.message}>
+                    <input type="hidden" {...register("religion")} />
                     <CustomSelect
                       options={religionOptions}
-                      value={formData.religion}
-                      onChange={(val) => updateField('religion', val)}
+                      value={watch("religion")}
+                      onChange={(val) => setValue('religion', val)}
                       placeholder="เลือก..."
                     />
                   </FormField>
 
-                  <FormField label="สถานภาพ">
+                  <FormField label="สถานภาพ" error={errors.marrystatus?.message}>
+                    <input type="hidden" {...register("marrystatus")} />
                     <CustomSelect
                       options={MARRY_STATUS_OPTIONS}
-                      value={formData.marrystatus}
-                      onChange={(val) => updateField('marrystatus', val)}
+                      value={watch("marrystatus")}
+                      onChange={(val) => setValue('marrystatus', val)}
                       placeholder="เลือก..."
                     />
                   </FormField>
@@ -853,11 +742,11 @@ export default function PatientNewPage() {
               {/* Contact Information */}
               <FormSection title="ข้อมูลติดต่อ" icon={<Phone size={18} />}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField label="โทรศัพท์มือถือ">
+                  <FormField label="โทรศัพท์มือถือ" error={errors.mobilePhone?.message}>
                     <Input
                       type="tel"
-                      value={formData.mobilePhone}
-                      onChange={(e) => updateField('mobilePhone', e.target.value.replace(/\D/g, ''))}
+                      {...register("mobilePhone")}
+                      onChange={(e) => setValue('mobilePhone', e.target.value.replace(/\D/g, ''))}
                       placeholder="08XXXXXXXX"
                       maxLength={10}
                     />
@@ -866,19 +755,18 @@ export default function PatientNewPage() {
                   <FormField label="โทรศัพท์บ้าน">
                     <Input
                       type="tel"
-                      value={formData.hometel}
-                      onChange={(e) => updateField('hometel', e.target.value.replace(/\D/g, ''))}
+                      {...register("hometel")}
+                      onChange={(e) => setValue('hometel', e.target.value.replace(/\D/g, ''))}
                       placeholder="0XXXXXXXX"
                     />
                   </FormField>
 
-                  <FormField label="อีเมล" error={errors.email} className="sm:col-span-2">
+                  <FormField label="อีเมล" className="sm:col-span-2">
                     <Input
                       type="email"
-                      value={formData.email}
-                      onChange={(e) => updateField('email', e.target.value)}
+                      {...register("email")}
+                      onChange={(e) => setValue('email', e.target.value)}
                       placeholder="email@example.com"
-                      error={!!errors.email}
                     />
                   </FormField>
                 </div>
@@ -887,11 +775,10 @@ export default function PatientNewPage() {
               {/* Address */}
               <FormSection title="ที่อยู่" icon={<MapPin size={18} />}>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <FormField label="บ้านเลขที่">
+                  <FormField label="บ้านเลขที่" error={errors.addrpart?.message}>
                     <Input
                       type="text"
-                      value={formData.addrpart}
-                      onChange={(e) => updateField('addrpart', e.target.value)}
+                      {...register("addrpart")}
                       placeholder="123/45"
                     />
                   </FormField>
@@ -899,8 +786,7 @@ export default function PatientNewPage() {
                   <FormField label="หมู่">
                     <Input
                       type="text"
-                      value={formData.moopart}
-                      onChange={(e) => updateField('moopart', e.target.value)}
+                      {...register("moopart")}
                       placeholder="1"
                     />
                   </FormField>
@@ -908,26 +794,55 @@ export default function PatientNewPage() {
                   <FormField label="ถนน" className="col-span-2">
                     <Input
                       type="text"
-                      value={formData.road}
-                      onChange={(e) => updateField('road', e.target.value)}
+                      {...register("road")}
                       placeholder="ชื่อถนน"
                     />
                   </FormField>
 
-                  <FormField label="จังหวัด" className="col-span-2">
+                  <FormField label="จังหวัด" className="col-span-2" error={errors.chwpart?.message}>
+                    <input type="hidden" {...register("chwpart")} />
                     <CustomSelect
-                      options={provinceOptions}
-                      value={formData.chwpart}
-                      onChange={(val) => updateField('chwpart', val)}
+                      options={provinces.map(prov => ({ value: prov.code, label: `${prov.code}-${prov.name}` }))}
+                      value={watch("chwpart")}
+                      onChange={(val) => setValue('chwpart', val)}
                       placeholder="เลือกจังหวัด..."
                     />
                   </FormField>
 
-                  <FormField label="รหัสไปรษณีย์" className="col-span-2">
+                  <FormField label="อำเภอ" className="col-span-2" error={errors.amppart?.message}>
+                    <input type="hidden" {...register("amppart")} />
+                    <CustomSelect
+                      options={
+                        disricts
+                          .map(dis => ({ value: dis.code, label: `${dis.code}-${dis.name}` }))
+                          .sort((a, b) => parseInt(a.value) - parseInt(b.value))
+                      }
+                      value={watch("amppart")!}
+                      onChange={(val) => {
+                        setValue('amppart', val);
+                      }}
+                      placeholder="เลือกอำเภอ..."
+                    />
+                  </FormField>
+
+                  <FormField label="ตำบล" className="col-span-2">
+                    <input type="hidden" {...register("tmbpart")} />
+                    <CustomSelect
+                      options={
+                        subdisricts
+                          .map(sub => ({ value: sub.code, label: `${sub.code}-${sub.name}` }))
+                          .sort((a, b) => parseInt(a.value) - parseInt(b.value))
+                      }
+                      value={watch("tmbpart")!}
+                      onChange={(val) => setValue('tmbpart', val)}
+                      placeholder="เลือกตำบล..."
+                    />
+                  </FormField>
+
+                  <FormField label="รหัสไปรษณีย์" className="col-span-2" error={errors.poCode?.message}>
                     <Input
                       type="text"
-                      value={formData.poCode}
-                      onChange={(e) => updateField('poCode', e.target.value.replace(/\D/g, '').slice(0, 5))}
+                      {...register("poCode")}
                       placeholder="XXXXX"
                       maxLength={5}
                     />
@@ -948,20 +863,22 @@ export default function PatientNewPage() {
                 }
               >
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <FormField label="หมู่เลือด">
+                  <FormField label="หมู่เลือด" error={errors.bloodgrp?.message}>
+                    <input type="hidden" {...register("bloodgrp")} />
                     <CustomSelect
                       options={BLOOD_GROUP_OPTIONS}
-                      value={formData.bloodgrp}
-                      onChange={(val) => updateField('bloodgrp', val)}
+                      value={watch("bloodgrp")}
+                      onChange={(val) => setValue('bloodgrp', val)}
                       placeholder="เลือก..."
                     />
                   </FormField>
 
                   <FormField label="Rh">
+                    <input type="hidden" {...register("bloodgroupRh")} />
                     <CustomSelect
                       options={BLOOD_RH_OPTIONS}
-                      value={formData.bloodgroupRh}
-                      onChange={(val) => updateField('bloodgroupRh', val)}
+                      value={watch("bloodgroupRh")!}
+                      onChange={(val) => setValue('bloodgroupRh', val)}
                       placeholder="เลือก..."
                     />
                   </FormField>
@@ -975,9 +892,9 @@ export default function PatientNewPage() {
                         <button
                           key={opt.value}
                           type="button"
-                          onClick={() => updateField('g6pd', opt.value)}
+                          onClick={() => setValue('g6pd', opt.value)}
                           className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                            formData.g6pd === opt.value
+                            watch("g6pd") === opt.value
                               ? opt.value === 'N'
                                 ? 'bg-emerald-500 text-white'
                                 : 'bg-amber-500 text-white'
@@ -992,11 +909,12 @@ export default function PatientNewPage() {
                 </div>
 
                 <div className="mt-4">
-                  <FormField label="ประวัติแพ้ยา">
+                  <FormField label="ประวัติแพ้ยา" error={errors.drugallergy?.message}>
                     <AllergyInput
                       allergies={allergies}
-                      onChange={(newAllergies) => {
-                        setAllergies(newAllergies);
+                      onChange={(_allergies) => {
+                        setValue('drugallergy', _allergies.join(","))
+                        setAllergies(_allergies);
                         setIsDirty(true);
                       }}
                     />
@@ -1005,13 +923,16 @@ export default function PatientNewPage() {
               </FormSection>
 
               {/* Family Information */}
-              <FormSection title="ข้อมูลครอบครัว" icon={<Users size={18} />} defaultOpen={false}>
+              <FormSection
+                title="ข้อมูลครอบครัว"
+                icon={<Users size={18} />}
+                defaultOpen={false}
+              >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField label="ชื่อบิดา">
                     <Input
                       type="text"
-                      value={formData.fathername}
-                      onChange={(e) => updateField('fathername', e.target.value)}
+                      {...register("fathername")}
                       placeholder="ชื่อ-นามสกุล บิดา"
                     />
                   </FormField>
@@ -1019,8 +940,7 @@ export default function PatientNewPage() {
                   <FormField label="ชื่อมารดา">
                     <Input
                       type="text"
-                      value={formData.mathername}
-                      onChange={(e) => updateField('mathername', e.target.value)}
+                      {...register("mathername")}
                       placeholder="ชื่อ-นามสกุล มารดา"
                     />
                   </FormField>
@@ -1028,8 +948,7 @@ export default function PatientNewPage() {
                   <FormField label="ชื่อคู่สมรส" className="sm:col-span-2">
                     <Input
                       type="text"
-                      value={formData.spsname}
-                      onChange={(e) => updateField('spsname', e.target.value)}
+                      {...register("spsname")}
                       placeholder="ชื่อ-นามสกุล คู่สมรส"
                     />
                   </FormField>
@@ -1037,32 +956,36 @@ export default function PatientNewPage() {
               </FormSection>
 
               {/* Emergency Contact */}
-              <FormSection title="ผู้ติดต่อฉุกเฉิน" icon={<AlertCircle size={18} />} defaultOpen={false}>
+              <FormSection
+                title="ผู้ติดต่อฉุกเฉิน"
+                icon={<AlertCircle size={18} />}
+                defaultOpen={haveErrors(errors, ["informname", "informtel", "informrelation"])}
+              >
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <FormField label="ชื่อผู้ติดต่อ">
+                  <FormField label="ชื่อผู้ติดต่อ" error={errors.informname?.message}>
                     <Input
                       type="text"
-                      value={formData.informname}
-                      onChange={(e) => updateField('informname', e.target.value)}
+                      {...register("informname")}
                       placeholder="ชื่อ-นามสกุล"
                     />
                   </FormField>
 
-                  <FormField label="เบอร์โทรศัพท์">
+                  <FormField label="เบอร์โทรศัพท์"error={errors.informtel?.message}>
                     <Input
                       type="tel"
-                      value={formData.informtel}
-                      onChange={(e) => updateField('informtel', e.target.value.replace(/\D/g, ''))}
+                      {...register("informtel")}
+                      onChange={(e) => setValue('informtel', e.target.value.replace(/\D/g, ''))}
                       placeholder="08XXXXXXXX"
                       maxLength={10}
                     />
                   </FormField>
 
-                  <FormField label="ความสัมพันธ์">
+                  <FormField label="ความสัมพันธ์"error={errors.informrelation?.message}>
+                    <input type='hidden' {...register("informrelation")} />
                     <CustomSelect
                       options={relationOptions}
-                      value={formData.informrelation}
-                      onChange={(val) => updateField('informrelation', val)}
+                      value={watch("informrelation")}
+                      onChange={(val) => setValue('informrelation', val)}
                       placeholder="เลือก..."
                     />
                   </FormField>
@@ -1099,11 +1022,12 @@ export default function PatientNewPage() {
 
               {/* Rights */}
               <FormSection title="สิทธิการรักษา" icon={<Shield size={18} />} collapsible={false}>
-                <FormField label="สิทธิการรักษา" required error={errors.pttype}>
+                <FormField label="สิทธิการรักษา" required error={errors.pttype?.message}>
+                  <input type='hidden' {...register("pttype")} />
                   <CustomSelect
                     options={pttypeOptions}
-                    value={formData.pttype}
-                    onChange={(val) => updateField('pttype', val)}
+                    value={watch("pttype")}
+                    onChange={(val) => setValue('pttype', val)}
                     placeholder="เลือกสิทธิ์..."
                   />
                 </FormField>
