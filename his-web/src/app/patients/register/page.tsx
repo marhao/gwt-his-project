@@ -6,7 +6,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   Save,
@@ -43,12 +43,15 @@ import {
   BLOOD_RH_OPTIONS,
   MARRY_STATUS_OPTIONS,
 } from '@/lib/types/patient';
+import { formatCid } from '@/lib/utils/string-format';
+import { formatSmartCard2DbDate } from '@/lib/utils/date-time';
 import { PatientImageUpload } from '@/components/ui/patient-image';
 import { AdminLayout } from '@/components/layout';
 import { ConfirmDialog, useConfirmDialog } from '@/components/ui/confirm-dialog';
 import CustomSelect from '@/components/ui/CustomSelect';
 import DatePicker from '@/components/ui/date-picker';
 import FormField from '@/components/ui/forms/FormField';
+import { useSmartCardReader, SmartCardData } from '@/hooks/useSmartCardReader';
 
 // ============================================
 // Mock Data
@@ -295,6 +298,7 @@ const AllergyInput: React.FC<{
 export default function PatientNewPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams()
   const hn = params.hn as string;
   const isNew = true; //TODO: hn === 'new';
 
@@ -313,6 +317,10 @@ export default function PatientNewPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isDirty, setIsDirty] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  /** ======================= Smart card reader props ======================= */
+  const [isSearching, setIsSearching] = useState(false);
+  const [showStatus, setShowStatus] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
 
   // Form data
   const [formData, setFormData] = useState<PatientFormData>({
@@ -407,6 +415,120 @@ export default function PatientNewPage() {
       setPhoto(primaryImage);
     }
   }, [primaryImage, localImageChanged]);
+
+  /** ======================= Smart card reader actions ======================= */
+  const {
+    isConnected,
+    isReading,
+    cardData,
+    error,
+    readerStatus,
+    connect,
+    disconnect,
+    readCard,
+    clearCardData
+  } = useSmartCardReader({
+    serverUrl: process.env.NEXT_PUBLIC_WS_URL,
+    autoConnect: false,
+    onCardRead: handleCardRead,
+    onError: (err) => {
+      setStatusMessage(err);
+    },
+    onConnect: () => {
+      setStatusMessage('เชื่อมต่อเครื่องอ่านบัตรแล้ว - รอเสียบบัตร');
+    },
+    onDisconnect: () => {
+      setStatusMessage('ยกเลิกการเชื่อมต่อแล้ว');
+    },
+  });
+
+  useEffect(() => {
+    const readDataFromCard = async () => {
+      if (isReading || isSearching) return;
+
+      /** ตรวจสอบการเชื่อมต่อเครื่องอ่านบัตร */
+      if (!isConnected) {
+        console.log('กำลังเชื่อมต่อเครื่องอ่านบัตร...');
+        /** หากยังไม่ได้เชื่อมต่อให้ทำการเชื่อมต่อ */
+        connect();
+      } else if (cardData) {
+        console.log(`กำลังค้นหาผู้ป่วย CID: ${cardData.cid_formatted || formatCid(cardData.cid)}...`);
+        /** ถ้าเสียบบัตรแล้ว ให้ทำการค้นหาผู้ป่วยจากฐานข้อมูล หรือ ใส่ข้อมูลจากบัตรให้ formData state */
+        handleCardRead(cardData);
+      } else {
+        console.log('รอเสียบบัตรประชาชน...');
+        /** ถ้าเชื่อมต่อแล้ว แต่ไม่ได้เสียบบัตรให้แจ้งเตือนและรอเสียบบัตร TODO: แจ้งเตือน */
+        // 
+      }
+    };
+
+    if (searchParams.get('cid')) {
+      readDataFromCard();
+    }
+  }, [searchParams]);
+
+  /** Handle if card is been reading */
+  async function handleCardRead(data: SmartCardData) {
+    if (!data.cid) {
+      const errMsg = 'ไม่พบเลขบัตรประชาชนในข้อมูลบัตร';
+      setStatusMessage(errMsg);
+      return;
+    }
+
+    setIsSearching(true);
+    setStatusMessage(`กำลังค้นหาผู้ป่วย CID: ${data.cid_formatted || formatCid(data.cid)}...`);
+
+    try {
+      if (searchParams.get('cid') === '') { // กรณีกดอ่านบัตร Smart card ที่หน้านี้
+          /** ถ้ามีข้อมูลในฐานข้อมูล */
+          
+      } else { // กรณีอ่านบัตร Smart card จากหน้าส่งตรวจ
+        setFormData({
+          pname: data?.name_th.prefix || '',
+          fname: data?.name_th.firstname || '',
+          lname: data?.name_th.lastname || '',
+          sex: data?.gender === "1" ? 'M' : 'F',
+          birthday: data?.dob ? formatSmartCard2DbDate(data?.dob!) : '',
+          cid: data?.cid || '',
+          mobilePhone: '',
+          hometel: '',
+          email: '',
+          addrpart: '',
+          moopart: '',
+          road: '',
+          tmbpart: '',
+          amppart: '',
+          chwpart: '',
+          poCode: '',
+          bloodgrp: '',
+          bloodgroupRh: '',
+          drugallergy: '',
+          g6pd: '',
+          pttype: '',
+          nationality: 'TH',
+          religion: '',
+          occupation: '',
+          marrystatus: '',
+          fathername: '',
+          mathername: '',
+          spsname: '',
+          informname: '',
+          informtel: '',
+          informrelation: '',
+        });
+
+        const cardPhoto = data?.photo ? `data:image/jpeg;base64,${data?.photo}` : null;
+        setPhoto(cardPhoto);
+      }
+    } catch (err) {
+      console.error('Error searching patient:', err);
+      const errMsg = 'เกิดข้อผิดพลาดในการค้นหาผู้ป่วย';
+      setStatusMessage(errMsg);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+  /** ======================= Smart card reader actions ======================= */
 
   // Update form field
   const updateField = useCallback((field: keyof PatientFormData, value: string) => {
@@ -613,7 +735,6 @@ export default function PatientNewPage() {
           {/* Main Content */}
           {/* ============================================ */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
             {/* Left Column - Main Form */}
             <div className="lg:col-span-2 space-y-6">
               
@@ -685,7 +806,6 @@ export default function PatientNewPage() {
                       placeholder="เลือกวันเกิด"
                       disableFutureDates={true}
                       disablePastDates={false}
-                      showAge={true}
                     />
                   </FormField>
 
@@ -955,14 +1075,16 @@ export default function PatientNewPage() {
               {/* Photo */}
               <FormSection title="รูปถ่าย" icon={<Camera size={18} />} collapsible={false}>
                 <div className="flex flex-col items-center gap-4">
-                  <PatientImageUpload
-                    hn={isNew ? undefined : hn}
-                    currentImage={photo}
-                    onImageChange={handlePhotoChange}
-                    onUpload={!isNew ? handleImageUpload : undefined}
-                    size="lg"
-                    editable={true}
-                  />
+                  <div className='border-3 border-gray-300 rounded-full'>
+                    <PatientImageUpload
+                      hn={isNew ? undefined : hn}
+                      currentImage={photo}
+                      onImageChange={handlePhotoChange}
+                      onUpload={!isNew ? handleImageUpload : undefined}
+                      size="lg"
+                      editable={true}
+                    />
+                  </div>
                   <p className="text-xs text-slate-400">
                     คลิกที่รูปเพื่อถ่ายรูปหรือเลือกไฟล์
                   </p>

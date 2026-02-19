@@ -36,6 +36,11 @@ export const formatThaiDateShort = (dateStr: string): string => {
     return `${day} ${month} ${year}`;
 };
 
+export const formatSmartCard2DbDate = (dateStr: string): string => {
+    const [year, month, date] = dateStr.split('-');
+    return `${parseInt(year) -543}-${month}-${date}`;
+}
+
 export const isFutureDate = (dateStr: string): boolean => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);

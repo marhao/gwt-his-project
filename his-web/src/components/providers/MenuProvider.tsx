@@ -288,9 +288,9 @@ export function MenuProvider({ children }: MenuProviderProps) {
         const accessItems = data.map(toMenuAccessItem);
 
         // Debug log
-        console.log('Raw API data:', rawData);
-        console.log('Converted menu data:', data);
-        console.log('Menu count:', data.length);
+        // console.log('Raw API data:', rawData);
+        // console.log('Converted menu data:', data);
+        // console.log('Menu count:', data.length);
 
         // Check if data already has nested children (is a tree)
         const isAlreadyTree = accessItems.some(
@@ -298,7 +298,7 @@ export function MenuProvider({ children }: MenuProviderProps) {
         );
 
         if (isAlreadyTree) {
-          console.log('Data is already a tree');
+          // console.log('Data is already a tree');
           setMenus(accessItems);
           setFlatMenus(flattenTree(accessItems));
         } else {
