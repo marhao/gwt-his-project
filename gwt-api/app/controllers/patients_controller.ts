@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import Patient from '#models/patient'
 import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
+import crypto from 'node:crypto'
 
 export default class PatientsController {
   /**
@@ -266,6 +267,130 @@ export default class PatientsController {
       return response.internalServerError({
         success: false,
         message: 'Failed to fetch patient statistics',
+        error: error.message,
+      })
+    }
+  }
+
+  /**
+   * @update
+   * @summary Update patient information
+   * @paramPath hn - Patient HN
+   * @responseBody 200 - Patient updated successfully
+   * @responseBody 404 - Patient not found
+   */
+  async create({ request, response }: HttpContext) {
+    try {
+      const data = request.only([
+        'pname',
+        'fname',
+        'midname',
+        'lname',
+        'sex',
+        'birthday',
+        'cid',
+        'passport_no',
+        'occupation',
+        // 'citizenship',
+        'nationality',
+        'religion',
+        'marrystatus',
+        // 'educate',
+        'pttype',
+        'bloodgrp',
+        'bloodgroup_rh',
+        'g6pd',
+        'addrpart',
+        'moopart',
+        'road',
+        // 'addr_soi',
+        'tmbpart',
+        'amppart',
+        'chwpart',
+        'po_code',
+        'hometel',
+        // 'worktel',
+        'mobile_phone_number',
+        'email',
+        'drugallergy',
+        'informname',
+        'informtel',
+        'informrelation',
+        'fathername',
+        'mathername',
+        'spsname',
+      ])
+
+      // Map snake_case to camelCase for model
+      const updateData: Record<string, unknown> = {}
+
+      if (data.pname !== undefined) updateData.pname = data.pname
+      if (data.fname !== undefined) updateData.fname = data.fname
+      if (data.midname !== undefined) updateData.midname = data.midname
+      if (data.lname !== undefined) updateData.lname = data.lname
+      if (data.sex !== undefined) updateData.sex = data.sex
+      if (data.birthday !== undefined) updateData.birthday = DateTime.fromISO(data.birthday)
+      if (data.cid !== undefined) updateData.cid = data.cid
+      // if (data.passport_no !== undefined) updateData.passportNo = data.passport_no
+
+      /** สถานะต่างๆ */
+      if (data.occupation !== undefined) updateData.occupation = data.occupation
+      // if (data.citizenship !== undefined) updateData.citizenship = data.citizenship
+      if (data.nationality !== undefined) updateData.nationalityCode = data.nationality
+      if (data.religion !== undefined) updateData.religionCode = data.religion
+      if (data.marrystatus !== undefined) updateData.marryStatus = data.marrystatus
+      // if (data.educate !== undefined) updateData.educate = data.educate
+
+      /** สิทธิการรักษา */
+      if (data.pttype !== undefined) updateData.pttype = data.pttype
+
+      /** ข้อมูลทางการแพทย์ */
+      if (data.bloodgrp !== undefined) updateData.bloodGroup = data.bloodgrp
+      if (data.bloodgroup_rh !== undefined) updateData.bloodGroupRh = data.bloodgroup_rh
+      if (data.g6pd !== undefined) updateData.g6pd = data.g6pd
+      if (data.drugallergy !== undefined) updateData.drugAllergy = data.drugallergy
+
+      /** ที่อยู่ */
+      if (data.addrpart !== undefined) updateData.addrPart = data.addrpart
+      if (data.moopart !== undefined) updateData.mooPart = data.moopart
+      if (data.road !== undefined) updateData.road = data.road
+      // if (data.addr_soi !== undefined) updateData.addrSoi = data.addr_soi
+      if (data.tmbpart !== undefined) updateData.tmbPart = data.tmbpart
+      if (data.amppart !== undefined) updateData.ampPart = data.amppart
+      if (data.chwpart !== undefined) updateData.chwPart = data.chwpart
+      if (data.po_code !== undefined) updateData.poCode = data.po_code
+
+      /** ข้อมูลติดต่อ */
+      if (data.hometel !== undefined) updateData.homeTel = data.hometel
+      // if (data.worktel !== undefined) updateData.workTel = data.worktel
+      if (data.mobile_phone_number !== undefined) updateData.mobilePhoneNumber = data.mobile_phone_number
+      if (data.email !== undefined) updateData.email = data.email
+
+      /** ข้อมูลติดต่อ และ ครอบครัว */
+      if (data.informname !== undefined) updateData.informName = data.informname
+      if (data.informtel !== undefined) updateData.informTel = data.informtel
+      if (data.informrelation !== undefined) updateData.informRelation = data.informrelation
+      if (data.fathername !== undefined) updateData.fatherName = data.fathername
+      if (data.mathername !== undefined) updateData.motherName = data.mathername
+      if (data.spsname !== undefined) updateData.spouseName = data.spsname
+
+      // Set auto computed field
+      updateData.hosGuid = crypto.randomUUID()
+      updateData.hn = '' // Generate new HN
+      updateData.lastUpdate = DateTime.now()
+
+      const patient = await Patient.create(updateData);
+
+      return response.ok({
+        success: true,
+        message: 'Patient created successfully',
+        data: this.transformPatientFull(patient),
+      })
+    } catch (error) {
+      console.error('Error creating patient:', error)
+      return response.internalServerError({
+        success: false,
+        message: 'Failed to creating patient',
         error: error.message,
       })
     }

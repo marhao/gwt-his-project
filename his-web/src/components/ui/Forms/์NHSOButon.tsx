@@ -11,7 +11,7 @@ type NHSOButonProps = {
     cid: string | null;
     patientName: string;
     onClick?: () => void;
-    onSuccess: (data: any) => void;
+    onSuccess: (mapping: string, right: any) => void;
 }
 const NHSOButon = ({ cid, patientName, onClick, onSuccess }: NHSOButonProps) => {
     const [canCheckNhso, setCanCheckNhso] = useState(false)
@@ -117,9 +117,9 @@ const NHSOButon = ({ cid, patientName, onClick, onSuccess }: NHSOButonProps) => 
      */
     const handleApplyNhsoRights = (rights: NhsoPersonalFund) => {
         // Map NHSO rights to pttype if possible
-        const mappedPttype = rights.mainInscl && Object.keys(NHSO_TO_PTTYPE_MAPPING).find(pt => pt === rights.mainInscl?.rightId);
+        const mappedPttype = rights.mainInscl && Object.entries(NHSO_TO_PTTYPE_MAPPING).find(pt => pt[0] === rights.mainInscl?.rightId);
         if (mappedPttype) {
-            onSuccess(mappedPttype);
+            onSuccess(mappedPttype[1], nhsoRights);
         }
 
         // Close modal
@@ -129,6 +129,7 @@ const NHSOButon = ({ cid, patientName, onClick, onSuccess }: NHSOButonProps) => 
     return (
         <>
             <button
+                type="button"
                 onClick={handleNHSO}
                 disabled={!canCheckNhso}
                 className={`

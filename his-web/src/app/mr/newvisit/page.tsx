@@ -160,11 +160,11 @@ export default function OpdNewVisitResponsive() {
                             <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
                                 <Calendar size={14} className="text-slate-400" />
                                 <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                                {currentTime.toLocaleDateString('th-TH', {
-                                    day: 'numeric',
-                                    month: 'short',
-                                    year: '2-digit'
-                                })}
+                                    {currentTime.toLocaleDateString('th-TH', {
+                                        day: 'numeric',
+                                        month: 'short',
+                                        year: '2-digit'
+                                    })}
                                 </span>
                             </div>
 
@@ -172,18 +172,18 @@ export default function OpdNewVisitResponsive() {
                             <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-primary-50 dark:bg-primary-500/10 rounded-lg">
                                 <Clock size={14} className="text-primary-500" />
                                 <span className="text-xs font-mono font-semibold text-primary-600 dark:text-primary-400">
-                                {currentTime.toLocaleTimeString('th-TH', {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                })}
+                                    {currentTime.toLocaleTimeString('th-TH', {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}
                                 </span>
                             </div>
                             </div>
 
                             {/* Quick Status Indicator */}
                             <div className="flex items-center gap-1">
-                            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-xs text-slate-400">Online</span>
+                                <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                                <span className="text-xs text-slate-400">Online</span>
                             </div>
                         </div>
                         </div>

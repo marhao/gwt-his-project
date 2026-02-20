@@ -4,52 +4,34 @@ import { useEffect, useState } from 'react';
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import {
-    Calendar,
-    Clock,
     Save,
-    X,
-    FileText,
     AlertCircle,
-    User,
     Lock,
     Unlock,
-    Camera,
     Trash2,
-    ChevronDown,
-    ChevronUp,
-    Phone,
-    MapPin,
     CreditCard,
     Stethoscope,
-    Building2,
-    ClipboardList,
     Shield,
     Activity,
-    QrCode,
-    Scan,
-    History,
-    MoreVertical,
     Check,
-    ArrowLeft,
     Loader2,
 } from 'lucide-react';
-import { safeZodResolver } from '@/lib/zod';
+import { safeZodResolver } from '@/lib/utils/zod';
 import { useOpdVisitLookups } from '@/hooks/useOpdVisitLookups';
 import PatientCard from '@/components/features/patient/PatientCard';
 import CollapsibleSection from '@/components/ui/CollapsibleSection';
-import FormField from '@/components/ui/Forms/FormField';
+import FormField from '@/components/ui/forms/FormField';
 import CustomSelect from '@/components/ui/CustomSelect';
-import NHSOButon from '@/components/ui/Forms/์NHSOButon';
+import NHSOButon from '@/components/ui/forms/์NHSOButon';
 import { type PatientNewVisit as Patient } from '@/lib/types/patient'
+import { type VisitFormData } from '@/lib/types/visit';
 
 const formSchema = z.object({
-    // hn: z.string().min(7),
-    cid: z.string().optional(),
+    hn: z.string().min(7),
     visitDate: z.string().optional(),
     visitTime: z.string().optional(),
     visitType: z.string().nonempty(),
     pttype: z.string().nonempty(),
-    pttypeName: z.string().optional(),
     chiefComplaint: z.string().nonempty(),
     department: z.string().nonempty(),
     spclty: z.string().nonempty(),
@@ -60,22 +42,6 @@ const formSchema = z.object({
 });
 
 type FormSchemaType = z.infer<typeof formSchema>;
-
-interface FormData {
-    cid: string;
-    visitDate: string;
-    visitTime: string;
-    visitType: string;
-    pttype: string;
-    pttypeName: string;
-    chiefComplaint: string;
-    department: string;
-    spclty: string;
-    patientType: string; //ประเภทผู้ป่วย
-    urgency: string; //ความเร่งด่วน
-    patientStatus: string; //สภาพผู้ป่วย
-    timeType: string; //ประเภทเวลา
-}
 
 type FormNewVisitProps = {
     patient: Patient | null;
@@ -93,8 +59,8 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
     const [isLoading, setIsLoading] = useState(false)
     const [saving, setSaving] = useState(false);
     // Form data
-    const [formData, setFormData] = useState<FormData>({
-        cid: '',
+    const [formData, setFormData] = useState<VisitFormData>({
+        hn: '',
         visitDate: new Date().toISOString().split('T')[0],
         visitTime: '',
         visitType: '',
@@ -112,19 +78,18 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
     const { register, setValue, reset, handleSubmit, formState: { errors }} = useForm<FormSchemaType>({
         resolver: safeZodResolver(formSchema),
         defaultValues: {
-            cid: '',
+            hn: '',
             visitDate: new Date().toISOString().split('T')[0],
             visitTime: '',
             visitType: '',
             pttype: '',
-            pttypeName: '',
             chiefComplaint: '',
             department: '',
             spclty: '',
             patientType: 'general',
-            timeType: 'intime',
             urgency: 'normal',
             patientStatus: 'walkin',
+            timeType: 'intime',
         }
     });
 
@@ -146,40 +111,45 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
     // ==========================================
     useEffect(() => {
         if (visitTypeOptions.length > 0 && !formData.visitType) {
-        // Find default visit type (e.g., 'W' for Walk-in or first option)
-        const defaultVisitType = visitTypeOptions.find(v => v.value === 'W') || visitTypeOptions[0];
-        if (defaultVisitType) {
-            setFormData(prev => ({
-                ...prev,
-                visitType: defaultVisitType.value,
-            }));
-        }
+            // Find default visit type (e.g., 'W' for Walk-in or first option)
+            const defaultVisitType = visitTypeOptions.find(v => v.value === 'W') || visitTypeOptions[0];
+            if (defaultVisitType) {
+                setValue("visitType", defaultVisitType.value);
+                setFormData(prev => ({
+                    ...prev,
+                    visitType: defaultVisitType.value,
+                }));
+            }
         }
     }, [lookups.visitTypeOptions, formData.visitType]);
 
     useEffect(() => {
         if (pttypeOptions.length > 0 && !formData.pttype) {
-        // Find default pttype (e.g., '10' for ชำระเงินเอง or first option)
-        const defaultPttype = pttypeOptions.find(p => p.value === '10') || pttypeOptions[0];
-        if (defaultPttype) {
-            setFormData(prev => ({
-            ...prev,
-            pttype: defaultPttype.value,
-            pttypeName: defaultPttype.label.split(' - ')[1] || defaultPttype.label,
-            }));
-        }
+            // Find default pttype (e.g., '10' for ชำระเงินเอง or first option)
+            const defaultPttype = pttypeOptions.find(p => p.value === '10') || pttypeOptions[0];
+            if (defaultPttype) {
+                const _pttypeName = defaultPttype.label.split(' - ')[1] || defaultPttype.label;
+
+                setValue("pttype", defaultPttype.value);
+                setFormData(prev => ({
+                    ...prev,
+                    pttype: defaultPttype.value,
+                    pttypeName: _pttypeName,
+                }));
+            }
         }
     }, [lookups.pttypeOptions, formData.pttype]);
 
     useEffect(() => {
         if (patient) {
-            setValue("cid", patient.cid)
+            setValue("hn", patient.hn)
             setValue("pttype", patient.pttype || '')
-            setValue("pttypeName", patient.pttypeName || '')
 
             setFormData((prev) => ({
                 ...prev,
+                hn: patient.hn || '',
                 cid: patient.cid || '',
+                patient: patient || null,
                 pttype: patient.pttype || prev.pttype,
                 pttypeName: patient.pttypeName || prev.pttypeName,
             }));
@@ -232,6 +202,7 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
         const defaultPttype = pttypeOptions.find(p => p.value === '10') || pttypeOptions[0];
 
         setFormData({
+            hn: '',
             visitDate: new Date().toISOString().split('T')[0],
             visitTime: '',
             visitType: defaultVisitType?.value || '',
@@ -264,7 +235,9 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
                                 <div className="hidden lg:block bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
                                     {/* Header */}
                                     <div className="px-4 py-3 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-                                        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">ตัวเลือกด่วน</h3>
+                                        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                            ตัวเลือกด่วน
+                                        </h3>
                                     </div>
 
                                     <div className="p-4 space-y-5">
@@ -476,7 +449,11 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
                         >
                             <div className="space-y-4">
                                 {/* Visit Type */}
-                                <FormField label="ประเภทการมา">
+                                <FormField
+                                    label="ประเภทการมา"
+                                    required
+                                    error={errors.visitType?.message}
+                                >
                                     <div className="flex gap-2">
                                         <input
                                             type="text"
@@ -497,13 +474,14 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
                                             />
                                         </div>
                                     </div>
-                                    {errors.visitType && (
-                                        <p className="mt-2 text-sm text-critical-500">{errors.visitType.message}</p>
-                                    )}
                                 </FormField>
 
                                 {/* Rights */}
-                                <FormField label="สิทธิการรักษา" required>
+                                <FormField
+                                    label="สิทธิการรักษา"
+                                    required
+                                    error={errors.pttype?.message}
+                                >
                                     <div className="flex flex-col sm:flex-row gap-2">
                                         <input
                                             type="text"
@@ -518,7 +496,6 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
                                                 onChange={(val) => {
                                                     const selected = pttypeOptions.find((o) => o.value === val);
                                                     setValue("pttype", val);
-                                                    setValue("pttypeName", selected?.label.split(' - ')[1] || '');
                                                     setFormData({
                                                         ...formData,
                                                         pttype: val,
@@ -530,13 +507,25 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
                                         <NHSOButon
                                             cid={patient && patient?.cid}
                                             patientName={patient && patient?.name || ''}
-                                            onSuccess={(data) => {
+                                            onSuccess={(mapping, right) => {
+                                                console.log(right);
+                                                
                                                 /** Set สิทธิการรักษา  */
-                                                const pttypeOption = pttypeOptions.find(p => p.value === data);
+                                                const pttypeOption = pttypeOptions.find(p => p.value === mapping);
                                                 if (pttypeOption) {
+                                                    setValue("pttype", mapping);
                                                     setFormData(prev => ({
                                                         ...prev,
-                                                        pttype: data,
+                                                        ptRight: {
+                                                            hn: prev.hn,
+                                                            pttype: mapping,
+                                                            pttypeName: pttypeOption.label.split(' - ')[1] || pttypeOption.label,
+                                                            hospmain: right.hospMain?.hospcode || '',
+                                                            hospsub: right.hospSub?.hospcode || '',
+                                                            beginDate: right.createDate,
+                                                            expireDate: right.expireDateTime
+                                                        },
+                                                        pttype: mapping,
                                                         pttypeName: pttypeOption.label.split(' - ')[1] || pttypeOption.label,
                                                     }));
                                                 }
@@ -566,16 +555,17 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
                             title="อาการสำคัญ"
                             icon={<Activity size={18} />}
                         >
-                            <FormField label="อาการสำคัญ (Chief Complaint)" required>
+                            <FormField
+                                label="อาการสำคัญ (Chief Complaint)"
+                                required
+                                error={errors.chiefComplaint?.message}
+                            >
                                 <textarea
                                     {...register("chiefComplaint")}
                                     placeholder="ระบุอาการสำคัญที่นำผู้ป่วยมาพบแพทย์..."
                                     rows={3}
                                     className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 resize-none"
                                 />
-                                {errors.chiefComplaint && (
-                                    <p className="mt-2 text-sm text-critical-500">{errors.chiefComplaint.message}</p>
-                                )}
                             </FormField>
                         </CollapsibleSection>
 
@@ -586,7 +576,11 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
                         >
                             <div className="space-y-4">
                                 {/* Department */}
-                                <FormField label="ห้องตรวจ" required>
+                                <FormField
+                                    label="ห้องตรวจ"
+                                    required
+                                    error={errors.department?.message}
+                                >
                                     <div className="flex gap-2">
                                         <input
                                             type="text"
@@ -608,13 +602,14 @@ const FormNewVisit = ({ patient, onClear }: FormNewVisitProps) => {
                                             />
                                         </div>
                                     </div>
-                                    {errors.department && (
-                                        <p className="mt-2 text-sm text-critical-500">{errors.department.message}</p>
-                                    )}
                                 </FormField>
 
                                 {/* Specialty */}
-                                <FormField label="แผนก" required>
+                                <FormField
+                                    label="แผนก"
+                                    required
+                                    error={errors.spclty?.message}
+                                >
                                     <div className="flex gap-2">
                                         <input
                                             type="text"

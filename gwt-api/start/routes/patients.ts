@@ -32,6 +32,8 @@ export default function patientRoutes() {
       router.get('/:hn', [PatientsController, 'show'])
       router.put('/:hn', [PatientsController, 'update'])
 
+      router.post('/', [PatientsController, 'create'])
+
       // Patient visits
       router.get('/:hn/visits', [PatientsController, 'visits'])
     })

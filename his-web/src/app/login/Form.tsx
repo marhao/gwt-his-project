@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 // import { zodResolver } from '@hookform/resolvers/zod';
-import { safeZodResolver } from '@/lib/zod';
+import { safeZodResolver } from '@/lib/utils/zod';
 import { z } from 'zod';
 import { User, Lock, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/components/providers';
