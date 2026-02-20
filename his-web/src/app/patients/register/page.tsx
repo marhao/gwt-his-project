@@ -34,7 +34,6 @@ import {
 } from 'lucide-react';
 import { type FieldErrors, useForm } from 'react-hook-form';
 import { z } from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   usePatientDetail,
   useProvinces,
@@ -43,7 +42,8 @@ import {
   useThaiAddress,
   useNationalities,
   useOccupations,
-  useEducations
+  useEducations,
+  usePttypes,
 } from '@/hooks';
 import { usePatientImageManager } from '@/hooks/usePatientImages';
 import {
@@ -153,13 +153,13 @@ const nationalityOptions = [
 ];
 
 const relationOptions = [
-  { value: 'spouse', label: 'คู่สมรส' },
-  { value: 'parent', label: 'บิดา/มารดา' },
-  { value: 'child', label: 'บุตร' },
-  { value: 'sibling', label: 'พี่น้อง' },
-  { value: 'relative', label: 'ญาติ' },
-  { value: 'friend', label: 'เพื่อน' },
-  { value: 'other', label: 'อื่นๆ' },
+  { value: 'คู่สมรส', label: 'คู่สมรส' },
+  { value: 'บิดา/มารดา', label: 'บิดา/มารดา' },
+  { value: 'บุตร', label: 'บุตร' },
+  { value: 'พี่น้อง', label: 'พี่น้อง' },
+  { value: 'ญาติ', label: 'ญาติ' },
+  { value: 'เพื่อน', label: 'เพื่อน' },
+  { value: 'อื่นๆ', label: 'อื่นๆ' },
 ];
 
 const patientSchema = z.object({
@@ -172,6 +172,7 @@ const patientSchema = z.object({
   occupation: z.string().optional().default('000'),
   education: z.string().optional().default('000'),
   nationality: z.string().nonempty("กรุณาระบุสัญชาติ"),
+  citizenship: z.string().nonempty("กรุณาระบุgเชื้อชาติ"),
   religion: z.string().nonempty("กรุณาระบุศาสนา"),
   marrystatus: z.string().nonempty("กรุณาระบุสถานภาพ"),
   pttype: z.string().nonempty("กรุณาระบุสิทธิการรักษา"),
@@ -272,8 +273,7 @@ export default function PatientNewPage() {
   const { data: nationalities } = useNationalities();
   const { data: occupations } = useOccupations();
   const { data: educations } = useEducations();
-
-  console.log(nationalities);
+  const { data: pttypes } = usePttypes();
 
   const [allergies, setAllergies] = useState<string[]>([]);
   const [photo, setPhoto] = useState<string | null>(null);
@@ -743,6 +743,19 @@ export default function PatientNewPage() {
                     />
                   </FormField>
 
+                  <FormField label="เชื้อชาติ" error={errors.citizenship?.message}>
+                    <input type="hidden" {...register("citizenship")} />
+                    <CustomSelect
+                      options={
+                        nationalities
+                          .map(nation => ({ value: nation.code, label: `${nation.code}-${nation.name}`}))
+                          .sort((a, b) => parseInt(a.value) - parseInt(b.value))
+                      }
+                      value={watch("citizenship")}
+                      onChange={(val) => setValue('citizenship', val)}
+                    />
+                  </FormField>
+
                   <FormField label="ศาสนา" error={errors.religion?.message}>
                     <input type="hidden" {...register("religion")} />
                     <CustomSelect
@@ -752,7 +765,10 @@ export default function PatientNewPage() {
                       placeholder="เลือก..."
                     />
                   </FormField>
+                </div>
 
+                {/* อาชีพ/การศึกษา */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
                   <FormField label="สถานภาพ" error={errors.marrystatus?.message}>
                     <input type="hidden" {...register("marrystatus")} />
                     <CustomSelect
@@ -762,10 +778,6 @@ export default function PatientNewPage() {
                       placeholder="เลือก..."
                     />
                   </FormField>
-                </div>
-
-                {/* อาชีพ/การศึกษา */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
                   <FormField label="อาชีพ" error={errors.occupation?.message}>
                     <input type="hidden" {...register("occupation")} />
                     <CustomSelect
@@ -1078,7 +1090,9 @@ export default function PatientNewPage() {
                 <FormField label="สิทธิการรักษา" required error={errors.pttype?.message}>
                   <input type='hidden' {...register("pttype")} />
                   <CustomSelect
-                    options={pttypeOptions}
+                    options={
+                      pttypes.map(right => ({ value: right.code, label: `${right.code}-${right.name}` }))
+                    }
                     value={watch("pttype")}
                     onChange={(val) => setValue('pttype', val)}
                     placeholder="เลือกสิทธิ์..."
