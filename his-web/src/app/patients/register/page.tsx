@@ -35,7 +35,16 @@ import {
 import { type FieldErrors, useForm } from 'react-hook-form';
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod';
-import { usePatientDetail, useProvinces, useDistricts, useSubdistricts, useThaiAddress } from '@/hooks';
+import {
+  usePatientDetail,
+  useProvinces,
+  useDistricts,
+  useSubdistricts,
+  useThaiAddress,
+  useNationalities,
+  useOccupations,
+  useEducations
+} from '@/hooks';
 import { usePatientImageManager } from '@/hooks/usePatientImages';
 import {
   PatientDetail,
@@ -161,6 +170,7 @@ const patientSchema = z.object({
   birthday: z.string().nonempty("กรุณาระบุวันที่เกิด"),
   cid: z.string().nonempty("กรุณาระบุเลขบัตรประชาชน"),
   occupation: z.string().optional().default('000'),
+  education: z.string().optional().default('000'),
   nationality: z.string().nonempty("กรุณาระบุสัญชาติ"),
   religion: z.string().nonempty("กรุณาระบุศาสนา"),
   marrystatus: z.string().nonempty("กรุณาระบุสถานภาพ"),
@@ -259,6 +269,11 @@ export default function PatientNewPage() {
   const { data: provinces } = useProvinces();
   const { data: disricts } = useDistricts(watch("chwpart"));
   const { data: subdisricts } = useSubdistricts(watch("chwpart") || '', watch("amppart") || '');
+  const { data: nationalities } = useNationalities();
+  const { data: occupations } = useOccupations();
+  const { data: educations } = useEducations();
+
+  console.log(nationalities);
 
   const [allergies, setAllergies] = useState<string[]>([]);
   const [photo, setPhoto] = useState<string | null>(null);
@@ -718,7 +733,11 @@ export default function PatientNewPage() {
                   <FormField label="สัญชาติ" error={errors.nationality?.message}>
                     <input type="hidden" {...register("nationality")} />
                     <CustomSelect
-                      options={nationalityOptions}
+                      options={
+                        nationalities
+                          .map(nation => ({ value: nation.code, label: `${nation.code}-${nation.name}`}))
+                          .sort((a, b) => parseInt(a.value) - parseInt(b.value))
+                      }
                       value={watch("nationality")}
                       onChange={(val) => setValue('nationality', val)}
                     />
@@ -740,6 +759,33 @@ export default function PatientNewPage() {
                       options={MARRY_STATUS_OPTIONS}
                       value={watch("marrystatus")}
                       onChange={(val) => setValue('marrystatus', val)}
+                      placeholder="เลือก..."
+                    />
+                  </FormField>
+                </div>
+
+                {/* อาชีพ/การศึกษา */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                  <FormField label="อาชีพ" error={errors.occupation?.message}>
+                    <input type="hidden" {...register("occupation")} />
+                    <CustomSelect
+                      options={
+                        occupations.map(occ => ({ value: occ.code, label: occ.name }))
+                      }
+                      value={watch("occupation")}
+                      onChange={(val) => setValue('occupation', val)}
+                      placeholder="เลือก..."
+                    />
+                  </FormField>
+
+                  <FormField label="การศึกษา" error={errors.occupation?.message}>
+                    <input type="hidden" {...register("education")} />
+                    <CustomSelect
+                      options={
+                        educations.map(occ => ({ value: occ.code, label: occ.name }))
+                      }
+                      value={watch("education")}
+                      onChange={(val) => setValue('education', val)}
                       placeholder="เลือก..."
                     />
                   </FormField>
