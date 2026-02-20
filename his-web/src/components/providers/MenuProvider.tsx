@@ -287,24 +287,19 @@ export function MenuProvider({ children }: MenuProviderProps) {
         // Convert to MenuAccessItem with default permissions
         const accessItems = data.map(toMenuAccessItem);
 
-<<<<<<< HEAD
-=======
         // Debug log
         // console.log('Raw API data:', rawData);
         // console.log('Converted menu data:', data);
         // console.log('Menu count:', data.length);
 
->>>>>>> develop
         // Check if data already has nested children (is a tree)
         const isAlreadyTree = accessItems.some(
           (item) => item.children && Array.isArray(item.children) && item.children.length > 0
         );
 
         if (isAlreadyTree) {
-<<<<<<< HEAD
-=======
           // console.log('Data is already a tree');
->>>>>>> develop
+
           setMenus(accessItems);
           setFlatMenus(flattenTree(accessItems));
         } else {

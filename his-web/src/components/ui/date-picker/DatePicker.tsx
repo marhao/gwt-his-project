@@ -482,51 +482,8 @@ const DatePicker: React.FC<DatePickerProps> = ({
                 <p className="mt-1 text-xs text-red-500">{error}</p>
             )}
 
-<<<<<<< HEAD
-  return (
-    <div className={cn('relative', className)}>
-      {label && (
-        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-          {label}
-        </label>
-      )}
-      
-      {/* Trigger Button */}
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={() => {
-          if (disabled) return;
-          if (!isOpen) {
-            updatePosition();
-            setIsOpen(true);
-          } else {
-            setIsOpen(false);
-          }
-        }}
-        disabled={disabled}
-        className={cn(
-          'w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl text-sm text-left',
-          'focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500',
-          'transition-colors flex items-center justify-between gap-2',
-          error ? 'border-red-300 dark:border-red-500' : 'border-slate-200 dark:border-slate-700',
-          disabled && 'opacity-60 cursor-not-allowed'
-        )}
-      >
-        <span className={value ? 'text-slate-900 dark:text-white' : 'text-slate-400'}>
-          {value ? formatThaiDateShort(value) : placeholder}
-        </span>
-        <div className="flex items-center gap-2">
-          {showAge && value && (
-            <span className="text-xs text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
-              {calculateAge(value)}
-            </span>
-          )}
-          <Calendar size={16} className="text-slate-400" />
-=======
             {/* Portal Dropdown */}
             {mounted && isOpen && createPortal(dropdownContent, document.body)}
->>>>>>> develop
         </div>
     );
 };

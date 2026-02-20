@@ -1,33 +1,24 @@
-// 'use client';
+"use client"
 
-<<<<<<< HEAD
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
-import { useSearchParams, useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Heart, User, Lock, Eye, EyeOff, Loader2, AlertCircle, Sun, Moon, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react'
+import { Heart, User, Lock, Eye, EyeOff, Loader2, AlertCircle, Sun, Moon } from 'lucide-react';
 import { useAuth, useTheme } from '@/components/providers';
 import { ToggleSwitch } from '@/components/ui';
-import { authApi } from '@/lib/api/auth';
-=======
-// import { useState } from 'react';
-// import { useForm } from 'react-hook-form';
-// import { zodResolver } from '@hookform/resolvers/zod';
-// import { z } from 'zod';
-import { Heart, User, Lock, Eye, EyeOff, Loader2, AlertCircle, Sun, Moon } from 'lucide-react';
-// import { useAuth, useTheme } from '@/components/providers';
-// import { ToggleSwitch } from '@/components/ui';
+import { useSearchParams, useRouter } from 'next/navigation';
 import FormLogin from './Form';
 import HeaderLogin from './Header';
->>>>>>> develop
+import { authApi } from '../../lib/api/auth';
 
-// const loginSchema = z.object({
-//   username: z.string().min(1, 'Username is required'),
-//   password: z.string().min(1, 'Password is required'),
-// });
+const loginSchema = z.object({
+  username: z.string().min(1, 'Username is required'),
+  password: z.string().min(1, 'Password is required'),
+});
 
-// type LoginForm = z.infer<typeof loginSchema>;
+type LoginForm = z.infer<typeof loginSchema>;
 
 // ============================================
 // Config
@@ -67,7 +58,6 @@ function redirectToProviderId() {
 }
 
 export default function LoginPage() {
-<<<<<<< HEAD
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [providerLoading, setProviderLoading] = useState(false);
@@ -141,7 +131,7 @@ export default function LoginPage() {
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   });
-=======
+
   // const [showPassword, setShowPassword] = useState(false);
   // const [error, setError] = useState<string | null>(null);
   // const { login, isLoading } = useAuth();
@@ -155,17 +145,16 @@ export default function LoginPage() {
   //   resolver: zodResolver(loginSchema),
   // });
   // console.log('Form errors', errors);
->>>>>>> develop
 
-  // const onSubmit = async (data: LoginForm) => {
-  //   setError(null);
-  //   try {
-  //     await login(data.username, data.password);
-  //   } catch (err: unknown) {
-  //     const error = err as { message?: string };
-  //     setError(error.message || 'Invalid username or password');
-  //   }
-  // };
+  const onSubmit = async (data: LoginForm) => {
+    setError(null);
+    try {
+      await login(data.username, data.password);
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setError(error.message || 'Invalid username or password');
+    }
+  };
 
   return (
     <div className="min-h-screen flex">
@@ -228,18 +217,8 @@ export default function LoginPage() {
 
       {/* Right Side - Login Form */}
       <div className="w-full lg:w-1/2 xl:w-2/5 flex flex-col bg-slate-50 dark:bg-slate-950">
-<<<<<<< HEAD
-        <div className="flex justify-end p-6">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
-            <Sun className="w-4 h-4 text-warning-500" />
-            <ToggleSwitch checked={theme === 'dark'} onChange={toggleTheme} size="sm" />
-            <Moon className="w-4 h-4 text-slate-400" />
-          </div>
-        </div>
-=======
         {/* Theme Toggle */}
         <HeaderLogin />
->>>>>>> develop
 
         <div className="flex-1 flex items-center justify-center px-6 sm:px-12 lg:px-16">
           <div className="w-full max-w-md">
@@ -259,7 +238,6 @@ export default function LoginPage() {
               <p className="text-slate-500 dark:text-slate-400">Please enter your credentials to access your account</p>
             </div>
 
-<<<<<<< HEAD
             {/* Error */}
             {error && (
               <div className="mb-6 p-4 bg-critical-50 dark:bg-critical-500/10 border border-critical-200 dark:border-critical-500/20 rounded-xl flex items-center gap-3">
@@ -333,22 +311,20 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="p-6 text-center text-xs text-slate-400">© 2024 MedCore HIS. All rights reserved.</div>
-=======
-            <FormLogin />
+        {/* <div className="p-6 text-center text-xs text-slate-400">© 2024 MedCore HIS. All rights reserved.</div> */}
+            {/* <FormLogin /> */}
 
             {/* Form Footer */}
-            <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
+            {/* <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
               Protected by MedCore Security System
-            </p>
-          </div>
-        </div>
+            </p> */}
+          {/* </div> */}
+        {/* </div> */}
 
         {/* Page Footer */}
         <div className="p-6 text-center text-xs text-slate-400">
           © 2024 MedCore HIS. All rights reserved.
         </div>
->>>>>>> develop
       </div>
     </div>
   );
