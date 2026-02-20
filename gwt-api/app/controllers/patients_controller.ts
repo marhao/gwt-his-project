@@ -292,11 +292,11 @@ export default class PatientsController {
         'cid',
         'passport_no',
         'occupation',
-        // 'citizenship',
+        'citizenship',
         'nationality',
         'religion',
         'marrystatus',
-        // 'educate',
+        'education',
         'pttype',
         'bloodgrp',
         'bloodgroup_rh',
@@ -335,12 +335,12 @@ export default class PatientsController {
       // if (data.passport_no !== undefined) updateData.passportNo = data.passport_no
 
       /** สถานะต่างๆ */
-      if (data.occupation !== undefined) updateData.occupation = data.occupation
-      // if (data.citizenship !== undefined) updateData.citizenship = data.citizenship
       if (data.nationality !== undefined) updateData.nationalityCode = data.nationality
+      if (data.citizenship !== undefined) updateData.citizenship = data.citizenship
       if (data.religion !== undefined) updateData.religionCode = data.religion
       if (data.marrystatus !== undefined) updateData.marryStatus = data.marrystatus
-      // if (data.educate !== undefined) updateData.educate = data.educate
+      if (data.occupation !== undefined) updateData.occupation = data.occupation
+      if (data.education !== undefined) updateData.educate = data.education
 
       /** สิทธิการรักษา */
       if (data.pttype !== undefined) updateData.pttype = data.pttype
@@ -377,7 +377,6 @@ export default class PatientsController {
 
       // Set auto computed field
       updateData.hosGuid = crypto.randomUUID()
-      updateData.hn = '' // Generate new HN
       updateData.lastUpdate = DateTime.now()
 
       const patient = await Patient.create(updateData);
