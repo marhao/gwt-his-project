@@ -102,11 +102,9 @@ export function useSmartCardReader(options: UseSmartCardReaderOptions = {}) {
   const handleMessage = useCallback((event: MessageEvent) => {
     try {
       const message: ServerMessage = JSON.parse(event.data);
-      console.log('WebSocket message received:', message);
 
       switch (message.type) {
         case 'connected':
-          console.log('Server connected, config:', message.payload.config);
           setState(prev => ({
             ...prev,
             isConnected: true,
@@ -118,7 +116,6 @@ export function useSmartCardReader(options: UseSmartCardReaderOptions = {}) {
 
         case 'card_inserted':
           if (message.payload.success && message.payload.data) {
-            console.log('Card data received:', message.payload.data);
             setState(prev => ({
               ...prev,
               isReading: false,
@@ -138,7 +135,6 @@ export function useSmartCardReader(options: UseSmartCardReaderOptions = {}) {
           break;
 
         case 'card_removed':
-          console.log('Card removed from:', message.payload.reader);
           setState(prev => ({
             ...prev,
             readerStatus: prev.isConnected ? 'connected' : 'disconnected',
@@ -189,12 +185,10 @@ export function useSmartCardReader(options: UseSmartCardReaderOptions = {}) {
     }));
 
     try {
-      console.log('Connecting to WebSocket:', wsUrl);
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log('WebSocket connected');
         reconnectAttemptsRef.current = 0;
         // Wait for 'connected' message from server to confirm
       };
@@ -202,7 +196,6 @@ export function useSmartCardReader(options: UseSmartCardReaderOptions = {}) {
       ws.onmessage = handleMessage;
 
       ws.onclose = (event) => {
-        console.log('WebSocket closed:', event.code, event.reason);
         wsRef.current = null;
         
         setState(prev => ({
@@ -218,7 +211,6 @@ export function useSmartCardReader(options: UseSmartCardReaderOptions = {}) {
         if (event.code !== 1000 && reconnectAttemptsRef.current < maxReconnectAttempts) {
           reconnectAttemptsRef.current++;
           const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 10000);
-          console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current})`);
           
           reconnectTimeoutRef.current = setTimeout(() => {
             connect();
@@ -227,7 +219,6 @@ export function useSmartCardReader(options: UseSmartCardReaderOptions = {}) {
       };
 
       ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
         const errorMsg = 'ไม่สามารถเชื่อมต่อเครื่องอ่านบัตรได้';
         setState(prev => ({
           ...prev,
@@ -240,7 +231,6 @@ export function useSmartCardReader(options: UseSmartCardReaderOptions = {}) {
       };
 
     } catch (error) {
-      console.error('Failed to create WebSocket:', error);
       const errorMsg = 'ไม่สามารถสร้างการเชื่อมต่อได้';
       setState(prev => ({
         ...prev,

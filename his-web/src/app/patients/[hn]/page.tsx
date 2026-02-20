@@ -87,8 +87,8 @@ const InfoItem: React.FC<{
       )}
       {link && (
         <span className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
-  <ExternalLink size={14} className="text-slate-400" />
-</span>
+          <ExternalLink size={14} className="text-slate-400" />
+        </span>
       )}
     </div>
   );
@@ -127,7 +127,8 @@ const QuickAction: React.FC<{
   label: string;
   color: 'blue' | 'purple' | 'emerald' | 'amber';
   onClick: () => void;
-}> = ({ icon, label, color, onClick }) => {
+  disabled?: boolean;
+}> = ({ icon, label, color, onClick, disabled = false }) => {
   const colorClasses = {
     blue: 'bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-500/10 dark:to-blue-600/20 border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-500/20 dark:hover:to-blue-600/30 shadow-blue-100',
     purple: 'bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-500/10 dark:to-purple-600/20 border-purple-200 dark:border-purple-500/30 text-purple-600 dark:text-purple-400 hover:from-purple-100 hover:to-purple-200 dark:hover:from-purple-500/20 dark:hover:to-purple-600/30 shadow-purple-100',
@@ -138,6 +139,7 @@ const QuickAction: React.FC<{
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       className={`flex flex-col items-center gap-2 p-4 rounded-2xl border shadow-sm transition-all hover:scale-105 hover:shadow-md ${colorClasses[color]}`}
     >
       <div className="size-10 rounded-xl flex items-center justify-center">
@@ -155,10 +157,10 @@ export default function PatientDetailPage() {
   const router = useRouter();
   const params = useParams();
   const hn = params.hn as string;
-  
+
   // Use API hook
   const { patient, loading, error, refresh } = usePatientDetail(hn);
-  
+
   // Patient image management
   const {
     primaryImage,
@@ -166,7 +168,7 @@ export default function PatientDetailPage() {
     upload: uploadImage,
     uploading,
   } = usePatientImageManager(hn);
-  
+
   const [activeTab, setActiveTab] = useState<'info' | 'history' | 'documents'>('info');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
@@ -305,8 +307,15 @@ export default function PatientDetailPage() {
                 <h1 className="hidden lg:block text-2xl font-bold mb-1">{patient.fullName}</h1>
                 <p className="hidden lg:block text-white/80 font-mono mb-3">HN: {patient.hn}</p>
                 <div className="flex flex-wrap gap-2">
+
+                  {patient.death && (
+                    <span className="px-3 py-1 bg-black/60 backdrop-blur-sm rounded-full text-sm font-semibold border border-white/20 shadow-sm flex items-center gap-1.5 animate-pulse">
+                      <span className="size-2 rounded-full bg-red-400" />
+                      เสียชีวิต
+                    </span>
+                  )}
                   <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm border border-white/10 shadow-sm">
-                    {patient.sex === 'M' ? 'ชาย' : 'หญิง'}
+                    {patient.sex === 'M' || patient.sex === '1' ? 'ชาย' : 'หญิง'}
                   </span>
                   <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm border border-white/10 shadow-sm">
                     {patient.ageText}
@@ -320,20 +329,32 @@ export default function PatientDetailPage() {
                 </div>
               </div>
 
-              {/* Allergy Warning */}
-              {allergies.length > 0 && (
-                <div className="lg:ml-auto p-3 bg-red-500/20 border border-red-400/30 rounded-xl">
-                  <div className="flex items-center gap-2 text-red-100 font-medium text-sm mb-1">
-                    <AlertCircle size={16} />
-                    แพ้ยา
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {allergies.map((allergy, i) => (
-                      <span key={i} className="px-2 py-0.5 bg-red-500/30 rounded text-xs">
-                        {allergy}
-                      </span>
-                    ))}
-                  </div>
+              {/* Warnings (Death / Allergy) */}
+              {(patient.death === 'Y' || allergies.length > 0) && (
+                <div className="lg:ml-auto flex flex-col gap-2">
+                  {patient.death === 'Y' && (
+                    <div className="p-3 bg-black/30 border border-white/20 rounded-xl">
+                      <div className="flex items-center gap-2 text-white font-semibold text-sm">
+                        <span className="size-2.5 rounded-full bg-red-400 animate-pulse" />
+                        ผู้ป่วยเสียชีวิตแล้ว
+                      </div>
+                    </div>
+                  )}
+                  {allergies.length > 0 && (
+                    <div className="p-3 bg-red-500/20 border border-red-400/30 rounded-xl">
+                      <div className="flex items-center gap-2 text-red-100 font-medium text-sm mb-1">
+                        <AlertCircle size={16} />
+                        แพ้ยา
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {allergies.map((allergy, i) => (
+                          <span key={i} className="px-2 py-0.5 bg-red-500/30 rounded text-xs">
+                            {allergy}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -348,7 +369,10 @@ export default function PatientDetailPage() {
             icon={<Stethoscope size={20} />}
             label="ส่งตรวจ"
             color="blue"
-            onClick={() => router.push(`/mr/newvisit?hn=${patient.hn}`)}
+            onClick={() => {
+              if (!patient.death) router.push(`/mr/newvisit?hn=${patient.hn}`);
+            }}
+            disabled={!!patient.death}
           />
           <QuickAction
             icon={<History size={20} />}
@@ -360,7 +384,7 @@ export default function PatientDetailPage() {
             icon={<Pill size={20} />}
             label="สั่งยา"
             color="emerald"
-            onClick={() => {}}
+            onClick={() => { }}
           />
           <QuickAction
             icon={<FileText size={20} />}
@@ -382,11 +406,10 @@ export default function PatientDetailPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-lg transition-all ${
-                activeTab === tab.id
-                  ? 'bg-primary-500 text-white shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
-              }`}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-lg transition-all ${activeTab === tab.id
+                ? 'bg-primary-500 text-white shadow-sm'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
+                }`}
             >
               <tab.icon size={16} />
               {tab.label}
@@ -561,8 +584,14 @@ export default function PatientDetailPage() {
               <SectionCard title="ดำเนินการ" icon={<Activity size={18} />}>
                 <div className="grid grid-cols-2 gap-2 p-2">
                   <button
-                    onClick={() => router.push(`/mr/newvisit?hn=${patient.hn}`)}
-                    className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-500/10 dark:to-blue-600/20 text-blue-600 dark:text-blue-400 rounded-xl hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-500/20 dark:hover:to-blue-600/30 transition-colors shadow-sm hover:shadow-md"
+                    onClick={() => {
+                      if (!patient.death) router.push(`/mr/newvisit?hn=${patient.hn}`);
+                    }}
+                    disabled={!!patient.death}
+                    className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-colors shadow-sm ${patient.death
+                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed opacity-50'
+                        : 'bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-500/10 dark:to-blue-600/20 text-blue-600 dark:text-blue-400 hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-500/20 dark:hover:to-blue-600/30 hover:shadow-md'
+                      }`}
                   >
                     <Stethoscope size={24} />
                     <span className="text-xs font-medium">ส่งตรวจ OPD</span>
@@ -589,7 +618,7 @@ export default function PatientDetailPage() {
                 title="ประวัติการมาพบแพทย์"
                 icon={<History size={18} />}
                 action={
-                  <button 
+                  <button
                     onClick={() => router.push(`/patients/${patient.hn}/visits`)}
                     className="text-xs text-primary-600 dark:text-primary-400 font-medium flex items-center gap-1"
                   >
@@ -600,8 +629,8 @@ export default function PatientDetailPage() {
                 <div className="p-4 text-center text-slate-400">
                   <History size={32} className="mx-auto mb-2" />
                   <p className="text-sm">
-                    {patient.lastVisit 
-                      ? `มาพบแพทย์ล่าสุด: ${patient.lastVisit}` 
+                    {patient.lastVisit
+                      ? `มาพบแพทย์ล่าสุด: ${patient.lastVisit}`
                       : 'ยังไม่มีประวัติการมาพบแพทย์'}
                   </p>
                 </div>
@@ -638,7 +667,11 @@ export default function PatientDetailPage() {
         <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 p-4 lg:hidden z-40 shadow-lg shadow-slate-900/10">
           <button
             onClick={() => router.push(`/mr/newvisit?hn=${patient.hn}`)}
-            className="w-full py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl font-medium flex items-center justify-center gap-2 shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-shadow"
+            disabled={!!patient.death}
+            className={`w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-shadow ${patient.death
+              ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed'
+              : 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40'
+              }`}
           >
             <Stethoscope size={20} />
             ส่งตรวจผู้ป่วย

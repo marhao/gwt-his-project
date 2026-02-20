@@ -46,6 +46,7 @@ export interface Patient {
   lastVisit: string | null;    // วันที่มาล่าสุด
   firstday: string | null;     // วันที่ลงทะเบียน
   death: 'Y' | 'N' | null;
+  isDead: boolean;            // computed from death
   deathday: string | null;
   
   /** ข้อมูลครอบครัว */

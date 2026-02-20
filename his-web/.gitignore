@@ -1,4 +1,8 @@
 .env
 *.local
 
+<<<<<<< HEAD
+.next/
+=======
 .next
+>>>>>>> develop

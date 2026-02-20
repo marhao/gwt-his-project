@@ -160,7 +160,7 @@ export default class PatientsController {
       }
 
       const patients = await Patient.query()
-        .select(['hn', 'cid', 'pname', 'fname', 'lname', 'sex', 'birthday', 'pttype'])
+        .select(['hn', 'cid', 'pname', 'fname', 'lname', 'sex', 'birthday', 'pttype','death'])
         .where((builder) => {
           builder
             .where('hn', 'like', `${q}%`)
@@ -179,6 +179,7 @@ export default class PatientsController {
         birthday: p.birthday?.toISODate(),
         age: this.calculateAge(p.birthday),
         pttype: p.pttype,
+        death: p.death,
       }))
 
       return response.ok({ success: true, data })
@@ -659,7 +660,7 @@ export default class PatientsController {
       clinic: patient.clinic,
 
       // Status
-      is_dead: patient.death === 'Y',
+      death: patient.death === 'Y',
       death_date: patient.deathDay?.toISODate(),
       first_visit: patient.firstDay?.toISODate(),
       last_visit: patient.lastVisit?.toISODate(),

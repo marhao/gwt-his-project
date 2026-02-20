@@ -52,60 +52,7 @@ import {
 // ============================================
 // Mock Data
 // ============================================
-const mockPatient: PatientDetail = {
-  hn: '0001234',
-  pname: 'นาย',
-  fname: 'สมชาย',
-  lname: 'ใจดี',
-  midname: null,
-  fullName: 'นายสมชาย ใจดี',
-  sex: 'M',
-  birthday: '1979-05-15',
-  age: 45,
-  ageText: '45 ปี 7 เดือน',
-  cid: '1234567890123',
-  mobilePhone: '0812345678',
-  hometel: '044123456',
-  email: 'somchai@email.com',
-  addrpart: '123/45',
-  moopart: '6',
-  road: 'มิตรภาพ',
-  tmbpart: '01',
-  amppart: '01',
-  chwpart: '30',
-  poCode: '30000',
-  fullAddress: '123/45 หมู่ 6 ถ.มิตรภาพ ต.ในเมือง อ.เมือง จ.นครราชสีมา 30000',
-  tmbName: 'ในเมือง',
-  ampName: 'เมืองนครราชสีมา',
-  chwName: 'นครราชสีมา',
-  bloodgrp: 'O',
-  bloodgroupRh: '+',
-  drugallergy: 'Penicillin, Aspirin',
-  allergies: ['Penicillin', 'Aspirin'],
-  g6pd: 'N',
-  pttype: 'UCS',
-  pttypeName: 'บัตรทอง 30 บาท',
-  lastVisit: '2024-12-15',
-  firstday: '2018-03-20',
-  death: 'N',
-  deathday: null,
-  fathername: 'นายสมศักดิ์ ใจดี',
-  mathername: 'นางสมหญิง ใจดี',
-  spsname: 'นางวิไล ใจดี',
-  marrystatus: '2',
-  informname: 'นางวิไล ใจดี',
-  informtel: '0898765432',
-  informrelation: 'คู่สมรส',
-  nationality: 'TH',
-  nationalityName: 'ไทย',
-  religion: '01',
-  religionName: 'พุทธ',
-  occupation: '001',
-  occupationName: 'รับราชการ',
-  passportNo: null,
-  lastUpdate: '2024-12-15 14:30:00',
-  photo: null,
-};
+
 
 // Options
 const provinceOptions = [
@@ -180,7 +127,7 @@ const FormSection: React.FC<FormSectionProps> = ({
         className={`w-full px-4 py-3 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 ${collapsible ? 'cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800' : 'cursor-default'} transition-colors`}
       >
         <div className="flex items-center gap-3">
-          <span className="text-slate-500 dark:text-slate-400">{icon}</span>
+          <span>{icon}</span>
           <span className="font-semibold text-slate-900 dark:text-white text-sm">{title}</span>
           {badge}
         </div>
@@ -658,7 +605,7 @@ export default function PatientEditPage() {
               {/* Personal Information */}
               <FormSection
                 title="ข้อมูลส่วนตัว"
-                icon={<User size={18} />}
+                icon={<User size={18} className="text-blue-500 dark:text-blue-400" />}
                 collapsible={false}
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -769,7 +716,7 @@ export default function PatientEditPage() {
               </FormSection>
 
               {/* Contact Information */}
-              <FormSection title="ข้อมูลติดต่อ" icon={<Phone size={18} />}>
+              <FormSection title="ข้อมูลติดต่อ" icon={<Phone size={18} className="text-emerald-500 dark:text-emerald-400" />}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField label="โทรศัพท์มือถือ">
                     <Input
@@ -803,7 +750,7 @@ export default function PatientEditPage() {
               </FormSection>
 
               {/* Address */}
-              <FormSection title="ที่อยู่" icon={<MapPin size={18} />}>
+              <FormSection title="ที่อยู่" icon={<MapPin size={18} className="text-orange-500 dark:text-orange-400" />}>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <FormField label="บ้านเลขที่">
                     <Input
@@ -856,7 +803,7 @@ export default function PatientEditPage() {
               {/* Medical Information */}
               <FormSection
                 title="ข้อมูลทางการแพทย์"
-                icon={<Heart size={18} />}
+                icon={<Heart size={18} className="text-rose-500 dark:text-rose-400" />}
                 badge={
                   allergies.length > 0 && (
                     <span className="px-2 py-0.5 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 rounded-full text-xs font-medium">
@@ -923,7 +870,7 @@ export default function PatientEditPage() {
               </FormSection>
 
               {/* Family Information */}
-              <FormSection title="ข้อมูลครอบครัว" icon={<Users size={18} />} defaultOpen={false}>
+              <FormSection title="ข้อมูลครอบครัว" icon={<Users size={18} className="text-violet-500 dark:text-violet-400" />} defaultOpen={false}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField label="ชื่อบิดา">
                     <Input
@@ -955,7 +902,7 @@ export default function PatientEditPage() {
               </FormSection>
 
               {/* Emergency Contact */}
-              <FormSection title="ผู้ติดต่อฉุกเฉิน" icon={<AlertCircle size={18} />} defaultOpen={false}>
+              <FormSection title="ผู้ติดต่อฉุกเฉิน" icon={<AlertCircle size={18} className="text-amber-500 dark:text-amber-400" />} defaultOpen={false}>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <FormField label="ชื่อผู้ติดต่อ">
                     <Input
@@ -991,7 +938,7 @@ export default function PatientEditPage() {
             {/* Right Column - Photo & Rights */}
             <div className="space-y-6">
               {/* Photo */}
-              <FormSection title="รูปถ่าย" icon={<Camera size={18} />} collapsible={false}>
+              <FormSection title="รูปถ่าย" icon={<Camera size={18} className="text-cyan-500 dark:text-cyan-400" />} collapsible={false}>
                 <div className="flex flex-col items-center gap-4">
                   <PatientImageUpload
                     hn={isNew ? undefined : hn}
@@ -1014,7 +961,7 @@ export default function PatientEditPage() {
               </FormSection>
 
               {/* Rights */}
-              <FormSection title="สิทธิการรักษา" icon={<Shield size={18} />} collapsible={false}>
+              <FormSection title="สิทธิการรักษา" icon={<Shield size={18} className="text-indigo-500 dark:text-indigo-400" />} collapsible={false}>
                 <FormField label="สิทธิการรักษา" required error={errors.pttype}>
                   <CustomSelect
                     options={pttypeOptions}

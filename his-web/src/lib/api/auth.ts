@@ -44,6 +44,9 @@ export const authApi = {
   login: (username: string, password: string) =>
     api.post<LoginResponse>('/auth/login', { username, password }),
 
+  loginWithProvider: (code: string) =>
+    api.post<LoginResponse>('/auth/login-provider', { code }),
+
   logout: () => {
     api.clearToken();
     return api.post('/auth/logout');
