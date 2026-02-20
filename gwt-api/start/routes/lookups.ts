@@ -49,9 +49,16 @@ export default function lookupRoutes() {
       // =========================================
       router.get('/ovstists', [LookupsController, 'ovstists'])           // ประเภทการมา
       router.get('/departments', [LookupsController, 'departments'])     // แผนก/ห้องตรวจ
-      router.get('/doctors', [LookupsController, 'doctors'])             // แพทย์
+      router.get('/doctors', [LookupsController, 'doctors'])             // แพทย์ (ใช้ร่วมกับ death)
       router.get('/spclties', [LookupsController, 'spclties'])           // ความเชี่ยวชาญ
       router.get('/clinics', [LookupsController, 'clinics'])             // ห้องตรวจ
+
+      // =========================================
+      // Death Lookups
+      // =========================================
+      router.get('/deaths', [LookupsController, 'deaths'])               // death_place, death_source, newborn_death_cause
+      router.get('/icd10', [LookupsController, 'icd10'])                 // ค้นหา ICD-10 (autocomplete)
+      router.get('/patients', [LookupsController, 'patients'])           // ค้นหาผู้ป่วย (autocomplete)
 
       // =========================================
       // Combined Lookups (for specific pages)

@@ -330,6 +330,7 @@ interface PatientApiSearchResponse {
     age: number | null;
     birthday: string | null;
     pttype: string | null;
+    death?: string | null; 
   }>;
 }
 
@@ -416,6 +417,7 @@ const transformPatientDetail = (data: PatientApiDetailResponse['data']): Patient
     // Related data
     allergies: data.drugallergy ? (data.drugallergy as string).split(',').map(s => s.trim()).filter(Boolean) : [],
     photo: data.photo as string | null,
+    isDead: data.death === 'Y',
   };
 };
 
@@ -494,7 +496,7 @@ export const patientApi = {
       bloodgrp: null,
       hasAllergy: false,
       lastVisit: null,
-      isDead: false,
+      isDead: item.death === 'Y',
     }));
   },
 

@@ -137,7 +137,6 @@ const SearchablePatientSelect: React.FC<SearchablePatientSelectProps> = ({
         const result = await patientApi.search(searchTerm, limit);
         setPatients(result);
       } catch (err) {
-        console.error('Error searching patients:', err);
         setError('เกิดข้อผิดพลาดในการค้นหา');
         setPatients([]);
       }
@@ -178,18 +177,28 @@ const SearchablePatientSelect: React.FC<SearchablePatientSelectProps> = ({
       return;
     }
 
+    // Find next/prev non-dead index
+    const findNextAlive = (from: number, direction: 1 | -1): number => {
+      const len = patients.length;
+      for (let i = 1; i <= len; i++) {
+        const idx = (from + i * direction + len) % len;
+        if (!patients[idx].isDead) return idx;
+      }
+      return -1;
+    };
+
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setFocusedIndex(prev => (prev < patients.length - 1 ? prev + 1 : 0));
+        setFocusedIndex(prev => findNextAlive(prev, 1));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setFocusedIndex(prev => (prev > 0 ? prev - 1 : patients.length - 1));
+        setFocusedIndex(prev => findNextAlive(prev, -1));
         break;
       case 'Enter':
         e.preventDefault();
-        if (focusedIndex >= 0 && patients[focusedIndex]) {
+        if (focusedIndex >= 0 && patients[focusedIndex] && !patients[focusedIndex].isDead) {
           handlePatientSelect(patients[focusedIndex]);
         }
         break;
@@ -316,33 +325,49 @@ const SearchablePatientSelect: React.FC<SearchablePatientSelectProps> = ({
             </div>
           )}
 
-          {!loading && !error && patients.map((patient, index) => (
+          {!loading && !error && patients.map((patient, index) => {
+            const isDeceased = patient.isDead;
+            const isFocused = index === focusedIndex;
+
+            let rowClass = 'text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700/50';
+            if (isDeceased) {
+              rowClass = 'opacity-60 cursor-not-allowed bg-slate-50 dark:bg-slate-800/50';
+            } else if (isFocused) {
+              rowClass = 'bg-primary-50 dark:bg-primary-500/20 text-primary-900 dark:text-primary-100';
+            }
+
+            return (
             <button
               key={patient.hn}
               type="button"
-              onClick={() => handlePatientSelect(patient)}
-              className={`w-full px-4 py-3 text-left transition-colors duration-150 border-b border-slate-100 dark:border-slate-700 last:border-b-0 ${
-                index === focusedIndex
-                  ? 'bg-primary-50 dark:bg-primary-500/20 text-primary-900 dark:text-primary-100'
-                  : selectedPatient?.hn === patient.hn
-                    ? 'bg-primary-100 dark:bg-primary-600/20 text-primary-900 dark:text-primary-100'
-                    : 'text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700/50'
-              }`}
+              onClick={() => !isDeceased && handlePatientSelect(patient)}
+              disabled={isDeceased}
+              className={`w-full px-4 py-3 text-left transition-colors duration-150 border-b border-slate-100 dark:border-slate-700 last:border-b-0 ${rowClass}`}
             >
               <div className="flex items-start gap-3">
-                <div className="size-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
-                  <User className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+                <div className={`size-10 rounded-full flex items-center justify-center shrink-0 ${
+                  isDeceased
+                    ? 'bg-slate-200 dark:bg-slate-700'
+                    : 'bg-slate-100 dark:bg-slate-700'
+                }`}>
+                  <User className={`w-5 h-5 ${
+                    isDeceased
+                      ? 'text-slate-400 dark:text-slate-500'
+                      : 'text-slate-500 dark:text-slate-400'
+                  }`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">{patient.fullName}</span>
+                    <span className={`font-medium ${isDeceased ? 'line-through text-slate-400 dark:text-slate-500' : ''}`}>
+                      {patient.fullName}
+                    </span>
                     {patient.hasAllergy && (
                       <span className="px-1.5 py-0.5 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 text-xs rounded">
                         แพ้ยา
                       </span>
                     )}
-                    {patient.isDead && (
-                      <span className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300 text-xs rounded">
+                    {isDeceased && (
+                      <span className="px-1.5 py-0.5 bg-slate-700 dark:bg-slate-600 text-white text-xs rounded font-medium">
                         เสียชีวิต
                       </span>
                     )}
@@ -362,7 +387,13 @@ const SearchablePatientSelect: React.FC<SearchablePatientSelectProps> = ({
                       </span>
                     )}
                   </div>
-                  {patient.cid && (
+                  {isDeceased && (
+                    <div className="mt-1.5 flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>ผู้ป่วยเสียชีวิตแล้ว ไม่สามารถส่งตรวจได้</span>
+                    </div>
+                  )}
+                  {!isDeceased && patient.cid && (
                     <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
                       CID: {patient.cid.replace(/(\d{1})(\d{4})(\d{5})(\d{2})(\d{1})/, '$1-$2-$3-$4-$5')}
                     </div>
@@ -370,7 +401,8 @@ const SearchablePatientSelect: React.FC<SearchablePatientSelectProps> = ({
                 </div>
               </div>
             </button>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

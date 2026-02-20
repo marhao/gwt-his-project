@@ -70,6 +70,7 @@ interface PatientApiSearchResponse {
     age: number | null;
     birthday: string | null;
     pttype: string | null;
+    death?: string | null;
   }>;
 }
 
@@ -122,7 +123,13 @@ const transformPatientListItem = (item: PatientApiListResponse['data'][0]): Pati
 });
 
 const transformPatientDetail = (data: PatientApiDetailResponse['data']): PatientDetail => {
+  // Debug: log raw API data to identify key naming (snake_case vs camelCase)
+  console.log('[DEBUG] transformPatientDetail raw data:', JSON.stringify(data, null, 2).substring(0, 500));
+  console.log('[DEBUG] is_dead:', data.is_dead, '| isDead:', (data as any).isDead, '| death:', data.death);
   const lookups = data.lookups || {};
+
+  // Check both snake_case and camelCase for is_dead (AdonisJS may serialize differently)
+  const rawIsDead = data.is_dead ?? (data as any).isDead;
 
   return {
     hn: data.hn as string,
@@ -133,7 +140,7 @@ const transformPatientDetail = (data: PatientApiDetailResponse['data']): Patient
     sex: data.sex as 'M' | 'F' | '1' | '2' | null,
     birthday: data.birthday as string | null,
     cid: data.cid as string | null,
-    mobilePhone: data.mobile_phone_number as string | null,
+    mobilePhone: (data.mobile_phone_number ?? (data as any).mobilePhoneNumber) as string | null,
     hometel: data.hometel as string | null,
     email: data.email as string | null,
     addrpart: data.addrpart as string | null,
@@ -142,16 +149,17 @@ const transformPatientDetail = (data: PatientApiDetailResponse['data']): Patient
     tmbpart: data.tmbpart as string | null,
     amppart: data.amppart as string | null,
     chwpart: data.chwpart as string | null,
-    poCode: data.po_code as string | null,
+    poCode: (data.po_code ?? (data as any).poCode) as string | null,
     bloodgrp: data.bloodgrp as string | null,
-    bloodgroupRh: data.bloodgroup_rh as string | null,
+    bloodgroupRh: (data.bloodgroup_rh ?? (data as any).bloodgroupRh) as string | null,
     drugallergy: data.drugallergy as string | null,
     g6pd: data.g6pd as 'Y' | 'N' | null,
     pttype: data.pttype as string | null,
-    lastVisit: data.last_visit as string | null,
-    firstday: data.firstday as string | null,
-    death: data.death as 'Y' | 'N' | null,
-    deathday: data.deathday as string | null,
+    lastVisit: (data.last_visit ?? (data as any).lastVisit) as string | null,
+    firstday: (data.firstday ?? (data as any).firstVisit) as string | null,
+    death: rawIsDead ? 'Y' : rawIsDead != null ? 'N' : (data.death as 'Y' | 'N' | null),
+    isDead: !!rawIsDead,
+    deathday: (data.death_date ?? (data as any).deathDate ?? data.deathday) as string | null,
     fathername: data.fathername as string | null,
     mathername: data.mathername as string | null,
     spsname: data.spsname as string | null,
@@ -255,7 +263,7 @@ export const patientApi = {
       bloodgrp: null,
       hasAllergy: false,
       lastVisit: null,
-      isDead: false,
+      isDead: item.death === 'Y',
     }));
   },
 

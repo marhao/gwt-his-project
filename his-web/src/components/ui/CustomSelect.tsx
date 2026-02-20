@@ -9,7 +9,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Check, Search, X, Loader2 } from 'lucide-react';
 
-interface Option {
+export interface Option {
   value: string;
   label: string;
   disabled?: boolean;
@@ -38,6 +38,16 @@ interface CustomSelectProps {
   loading?: boolean;
   /** เปิดให้พิมพ์ค้นหาได้ในช่อง input โดยตรง */
   typeToSearch?: boolean;
+  /** Async search function — เมื่อส่ง prop นี้จะเปลี่ยนเป็นโหมด autocomplete (ค้นจาก API) */
+  onSearch?: (query: string) => Promise<Option[]>;
+  /** Callback เมื่อเลือก option (ส่ง object เต็ม) */
+  onSelectOption?: (option: Option) => void;
+  /** ข้อความแสดงใน input เมื่อไม่ได้พิมพ์ค้นหา (ใช้กับ async mode) */
+  displayValue?: string;
+  /** Debounce delay สำหรับ async search (ms) */
+  debounceMs?: number;
+  /** จำนวนตัวอักษรขั้นต่ำก่อนเริ่มค้นหา */
+  minChars?: number;
 }
 
 // ============================================
@@ -66,46 +76,52 @@ const DropdownPortal: React.FC<DropdownPortalProps> = ({
   onBackdropClick,
   floatingInput,
 }) => {
-  const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
-  const [inputPosition, setInputPosition] = useState({ top: 0, left: 0, width: 0, height: 0 });
+  // Use refs to compute position synchronously during render.
+  // This guarantees the very first createPortal call uses the correct coordinates
+  // (no flash at 0,0).
+  const positionRef = useRef({ top: 0, left: 0, width: 0 });
+  const inputPositionRef = useRef({ top: 0, left: 0, width: 0, height: 0 });
+  const [, setTick] = useState(0);
 
-  useEffect(() => {
-    if (!isOpen || !targetRef.current) return;
-
-    const updatePosition = () => {
-      const rect = targetRef.current?.getBoundingClientRect();
-      if (!rect) return;
-
-      setPosition({
-        top: openUp ? rect.top - maxHeight - 8 : rect.bottom + 8,
-        left: rect.left,
-        width: rect.width,
-      });
-
-      // Update input position for floating input
-      if (inputRef.current && showBackdrop) {
-        const inputRect = inputRef.current.getBoundingClientRect();
-        setInputPosition({
-          top: inputRect.top,
-          left: inputRect.left,
-          width: inputRect.width,
-          height: inputRect.height,
-        });
-      }
+  // Compute position synchronously during render when open
+  if (isOpen && targetRef.current) {
+    const rect = targetRef.current.getBoundingClientRect();
+    positionRef.current = {
+      top: openUp ? rect.top - maxHeight - 8 : rect.bottom + 8,
+      left: rect.left,
+      width: rect.width,
     };
 
-    updatePosition();
+    if (inputRef.current && showBackdrop) {
+      const inputRect = inputRef.current.getBoundingClientRect();
+      inputPositionRef.current = {
+        top: inputRect.top,
+        left: inputRect.left,
+        width: inputRect.width,
+        height: inputRect.height,
+      };
+    }
+  }
 
-    window.addEventListener('scroll', updatePosition, true);
-    window.addEventListener('resize', updatePosition);
+  // Keep position updated on scroll/resize (trigger re-render so ref is recomputed above)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleUpdate = () => setTick((n) => n + 1);
+
+    window.addEventListener('scroll', handleUpdate, true);
+    window.addEventListener('resize', handleUpdate);
 
     return () => {
-      window.removeEventListener('scroll', updatePosition, true);
-      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', handleUpdate, true);
+      window.removeEventListener('resize', handleUpdate);
     };
-  }, [isOpen, targetRef, inputRef, openUp, maxHeight, showBackdrop]);
+  }, [isOpen]);
 
-  if (!isOpen || typeof window === 'undefined') return null;
+  if (!isOpen || typeof window === 'undefined' || positionRef.current.width === 0) return null;
+
+  const position = positionRef.current;
+  const inputPosition = inputPositionRef.current;
 
   return createPortal(
     <>
@@ -174,6 +190,11 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   dropdownTitle,
   loading = false,
   typeToSearch = true,
+  onSearch,
+  onSelectOption,
+  displayValue: displayValueProp,
+  debounceMs = 300,
+  minChars = 1,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [openUp, setOpenUp] = useState(false);
@@ -181,11 +202,15 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [isTyping, setIsTyping] = useState(false);
 
+  const [asyncOptions, setAsyncOptions] = useState<Option[]>([]);
+  const [asyncLoading, setAsyncLoading] = useState(false);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const inputContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const floatingInputRef = useRef<HTMLInputElement>(null);
   const optionsRef = useRef<HTMLDivElement>(null);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Normalize options
   const normalizedOptions: Option[] = options.map((option, index) =>
@@ -194,8 +219,38 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
       : { ...option, value: option.value || `option-${index}` }
   );
 
+  // Async search effect
+  useEffect(() => {
+    if (!onSearch) return;
+
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+
+    if (searchQuery.length < minChars) {
+      setAsyncOptions([]);
+      return;
+    }
+
+    searchTimerRef.current = setTimeout(async () => {
+      setAsyncLoading(true);
+      try {
+        const results = await onSearch(searchQuery);
+        setAsyncOptions(results);
+      } catch {
+        setAsyncOptions([]);
+      } finally {
+        setAsyncLoading(false);
+      }
+    }, debounceMs);
+
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, [searchQuery, onSearch, debounceMs, minChars]);
+
   // Filter options
-  const filteredOptions = searchQuery
+  const filteredOptions = onSearch
+    ? asyncOptions
+    : searchQuery
     ? normalizedOptions.filter((opt) =>
         opt.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
         opt.value.toLowerCase().includes(searchQuery.toLowerCase())
@@ -203,7 +258,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     : normalizedOptions;
 
   const currentOption = normalizedOptions.find((o) => o.value === value);
-  const displayValue = currentOption?.label || '';
+  const displayValue = displayValueProp ?? currentOption?.label ?? '';
 
   // Calculate dropdown direction
   const calculateDirection = useCallback(() => {
@@ -325,6 +380,11 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
 
   const handleSelect = (optionValue: string) => {
     onChange(optionValue);
+    if (onSelectOption) {
+      const allOpts = onSearch ? asyncOptions : normalizedOptions;
+      const selected = allOpts.find((o) => o.value === optionValue);
+      if (selected) onSelectOption(selected);
+    }
     closeDropdown();
   };
 
@@ -332,6 +392,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     e.stopPropagation();
     onChange('');
     setSearchQuery('');
+    if (onSearch) setAsyncOptions([]);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -361,36 +422,36 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     primary: {
       ring: 'ring-primary-500/30',
       border: 'border-primary-500',
-      selected: 'bg-primary-50 dark:bg-primary-500/15 text-primary-700 dark:text-primary-300',
-      hover: 'hover:bg-primary-50/50 dark:hover:bg-primary-500/10',
-      highlighted: 'bg-primary-100/70 dark:bg-primary-500/20',
+      selected: 'bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300',
+      hover: 'hover:bg-primary-50 dark:hover:bg-primary-500/15',
+      highlighted: 'bg-primary-100 dark:bg-primary-500/25',
       check: 'text-primary-500',
       indicator: 'bg-primary-500',
     },
     gray: {
       ring: 'ring-slate-400/30',
       border: 'border-slate-400',
-      selected: 'bg-slate-100 dark:bg-slate-600/20 text-slate-700 dark:text-slate-200',
-      hover: 'hover:bg-slate-50 dark:hover:bg-slate-700/50',
-      highlighted: 'bg-slate-100 dark:bg-slate-700/70',
+      selected: 'bg-slate-100 dark:bg-slate-600/30 text-slate-700 dark:text-slate-200',
+      hover: 'hover:bg-slate-100 dark:hover:bg-slate-700/70',
+      highlighted: 'bg-slate-200/70 dark:bg-slate-700',
       check: 'text-slate-600 dark:text-slate-400',
       indicator: 'bg-slate-500',
     },
     success: {
       ring: 'ring-emerald-500/30',
       border: 'border-emerald-500',
-      selected: 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
-      hover: 'hover:bg-emerald-50/50 dark:hover:bg-emerald-500/10',
-      highlighted: 'bg-emerald-100/70 dark:bg-emerald-500/20',
+      selected: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300',
+      hover: 'hover:bg-emerald-50 dark:hover:bg-emerald-500/15',
+      highlighted: 'bg-emerald-100 dark:bg-emerald-500/25',
       check: 'text-emerald-500',
       indicator: 'bg-emerald-500',
     },
     danger: {
       ring: 'ring-red-500/30',
       border: 'border-red-500',
-      selected: 'bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300',
-      hover: 'hover:bg-red-50/50 dark:hover:bg-red-500/10',
-      highlighted: 'bg-red-100/70 dark:bg-red-500/20',
+      selected: 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300',
+      hover: 'hover:bg-red-50 dark:hover:bg-red-500/15',
+      highlighted: 'bg-red-100 dark:bg-red-500/25',
       check: 'text-red-500',
       indicator: 'bg-red-500',
     },
@@ -502,7 +563,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         className="overflow-y-auto overscroll-contain"
         style={{ maxHeight: optionsMaxHeight }}
       >
-        {loading ? (
+        {(loading || asyncLoading) ? (
           <div className="px-4 py-8 text-center">
             <Loader2 className="size-6 text-primary-500 animate-spin mx-auto mb-2" />
             <div className="text-slate-400 dark:text-slate-500 text-sm">กำลังโหลด...</div>
