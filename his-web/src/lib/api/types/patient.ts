@@ -100,6 +100,7 @@ export interface PatientListItem {
     // Related data
     allergies: string[];
     photo: string | null;
+    isDead: boolean;
   }
   
   // ============================================

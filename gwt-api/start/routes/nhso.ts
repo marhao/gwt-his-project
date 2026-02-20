@@ -58,6 +58,14 @@ export default function nhsoRoutes() {
          */
         router.post('/logout', [NhsoController, 'logout'])
 
+        // Batch fetch auth_code จาก NHSO API
+        router.post('/auth-codes/batch', [NhsoController, 'batchFetchAuthCodes'])
+
+        // Fetch auth_code สำหรับ VN เดียว
+        router.post('/auth-codes/:vn', [NhsoController, 'fetchAuthCodeForVn'])
+
+        router.post('/nhso/right-check', [NhsoController, 'checkRight'])
+
     }).prefix('/api/v1/nhso')
         .use(middleware.auth())
 }

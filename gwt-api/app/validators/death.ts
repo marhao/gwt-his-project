@@ -1,0 +1,45 @@
+import vine from '@vinejs/vine'
+
+export const storeDeathValidator = vine.compile(
+  vine.object({
+    hn: vine.string().maxLength(9).optional().nullable(),
+    cid: vine.string().maxLength(17).optional().nullable(),
+    hcode: vine.string().maxLength(5).optional().nullable(),
+    deathDate: vine.date({ formats: ['YYYY-MM-DD'] }).optional().nullable(),
+    deathDiag1: vine.string().maxLength(6).optional().nullable(),
+    deathDiag2: vine.string().maxLength(6).optional().nullable(),
+    deathDiag3: vine.string().maxLength(6).optional().nullable(),
+    deathDiag4: vine.string().maxLength(6).optional().nullable(),
+    deathDiagOther: vine.string().maxLength(6).optional().nullable(),
+    deathCause: vine.string().maxLength(6).optional().nullable(),
+    deathPlace: vine.string().maxLength(1).optional().nullable(),
+    lastPttype: vine.string().maxLength(2).optional().nullable(),
+    an: vine.string().maxLength(9).optional().nullable(),
+    nopreg: vine.string().maxLength(1).optional().nullable(),
+    wpreg: vine.number().optional().nullable(),
+    odisease: vine.string().maxLength(7).optional().nullable(),
+    deathTime: vine.string().optional().nullable(),
+    deathDiagDate1: vine.date({ formats: ['YYYY-MM-DD'] }).optional().nullable(),
+    deathDiagDate2: vine.date({ formats: ['YYYY-MM-DD'] }).optional().nullable(),
+    deathDiagDate3: vine.date({ formats: ['YYYY-MM-DD'] }).optional().nullable(),
+    deathDiagDate4: vine.date({ formats: ['YYYY-MM-DD'] }).optional().nullable(),
+    deathCauseText: vine.string().maxLength(250).optional().nullable(),
+    deathCertId: vine.number().optional().nullable(),
+    deathCertDate: vine.date({ formats: ['YYYY-MM-DD'] }).optional().nullable(),
+    deathCertDoctor: vine.string().maxLength(7).optional().nullable(),
+    deathSource: vine.number().optional().nullable(),
+    deathNumber: vine.string().maxLength(25).optional().nullable(),
+    newbornDeathCauseId: vine.number().optional().nullable(),
+    hosGuid: vine.string().maxLength(38).optional().nullable(),
+    autopsyPerform: vine.string().maxLength(1).optional().nullable(),
+    noDetail: vine.string().maxLength(1).optional().nullable(),
+    deathHospcode: vine.string().maxLength(9).optional().nullable(),
+    deathPreg42Day: vine.string().maxLength(1).optional().nullable(),
+    staff: vine.string().maxLength(50).optional().nullable(),
+    doctorDxText: vine.string().optional().nullable(),
+    deathDiagIcd10: vine.string().maxLength(6).optional().nullable(),
+    extHospitalText: vine.string().optional().nullable(),
+  })
+)
+
+export const updateDeathValidator = storeDeathValidator

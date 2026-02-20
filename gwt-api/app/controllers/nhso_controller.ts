@@ -1,6 +1,39 @@
 // app/controllers/nhso_controller.ts
 import type { HttpContext } from '@adonisjs/core/http'
 import { getNhsoTokenManager } from '#services/nhso_token_manager'
+import vine from '@vinejs/vine'
+import NhsoAuthCodeService from '#services/nhso_auth_code_service'
+import NhsoRightCheckService from '#services/nhso_right_check_service'
+
+
+const batchValidator = vine.compile(
+  vine.object({
+    vstdateFrom: vine.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    vstdateTo: vine.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    hn: vine.string().optional(),
+    vn: vine.string().optional(),
+    delayMs: vine.number().min(0).optional(),
+    maxRecords: vine.number().min(1).optional(),
+  })
+)
+
+const vnParamValidator = vine.compile(
+  vine.object({
+    params: vine.object({
+      vn: vine.string().trim().minLength(1),
+    }),
+  })
+)
+
+
+
+const rightCheckValidator = vine.compile(
+  vine.object({
+    hn: vine.string().trim().optional(),
+    vn: vine.string().trim().optional(),
+    cid: vine.string().trim().optional(),
+  })
+)
 
 export default class NhsoController {
   private tokenManager = getNhsoTokenManager()
@@ -306,5 +339,94 @@ export default class NhsoController {
         message: error instanceof Error ? error.message : 'Internal server error',
       })
     }
+  }
+
+  async batchFetchAuthCodes({ request, response }: HttpContext) {
+    const payload = await request.validateUsing(batchValidator)
+
+    const service = new NhsoAuthCodeService()
+    const result = await service.execute(payload)
+
+    return response.ok({
+      success: true,
+      data: result,
+    })
+  }
+
+  async fetchAuthCodeForVn({ request, response }: HttpContext) {
+    const { params } = await vnParamValidator.validate({
+      params: request.params(),
+    })
+
+    const service = new NhsoAuthCodeService()
+    const result = await service.fetchForVn(params.vn)
+
+    if (result.error?.includes('not found')) {
+      return response.notFound({
+        success: false,
+        code: 'VN_NOT_FOUND',
+        message: result.error,
+      })
+    }
+
+    return response.ok({
+      success: true,
+      data: result,
+    })
+  }
+
+  async checkRight({ request, response }: HttpContext) {
+    const payload = await request.validateUsing(rightCheckValidator)
+
+    if (!payload.hn && !payload.vn && !payload.cid) {
+      return response.badRequest({
+        success: false,
+        code: 'MISSING_PARAM',
+        message: 'ต้องระบุ hn, vn, หรือ cid อย่างน้อย 1 อย่าง',
+      })
+    }
+
+    const service = new NhsoRightCheckService()
+    const result = await service.checkRight(payload)
+
+    if (!result.success) {
+      // แยก error type
+      if (result.error?.includes('CID Invalid')) {
+        return response.badRequest({
+          success: false,
+          code: 'CID_INVALID',
+          message: result.error,
+        })
+      }
+
+      if (result.error?.includes('Token')) {
+        return response.status(502).json({
+          success: false,
+          code: 'NHSO_TOKEN_ERROR',
+          message: result.error,
+        })
+      }
+
+      if (result.error?.includes('API Error')) {
+        return response.status(502).json({
+          success: false,
+          code: 'NHSO_API_ERROR',
+          message: result.error,
+          raw: result.raw,
+        })
+      }
+
+      return response.unprocessableEntity({
+        success: false,
+        code: 'MAP_FAILED',
+        message: result.error,
+        raw: result.raw,
+      })
+    }
+
+    return response.ok({
+      success: true,
+      data: result,
+    })
   }
 }

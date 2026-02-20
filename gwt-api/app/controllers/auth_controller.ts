@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 import os from 'node:os'
 import env from '#start/env'
+import HealthIdService, { HealthIdError } from '#services/health_id_service'
 
 // ===========================================
 // Server Network Info Helper
@@ -391,6 +392,138 @@ export default class AuthController {
       return response.internalServerError({
         success: false,
         message: 'An error occurred',
+      })
+    }
+  }
+
+  async loginWithProviderId({ request, response }: HttpContext) {
+    const { code } = request.only(['code'])
+
+    if (!code) {
+      return response.badRequest({
+        success: false,
+        message: 'Authorization code is required',
+      })
+    }
+
+    try {
+      // ============================================
+      // Step 1-3: code → Health ID token → Provider token → Profile
+      // ============================================
+      const healthIdService = new HealthIdService()
+      const result = await healthIdService.authenticateProvider(code)
+
+      const { hash_cid, provider_id, name_th } = result.profile
+
+      if (!hash_cid) {
+        return response.badRequest({
+          success: false,
+          message: 'ไม่พบข้อมูล CID จาก Provider ID',
+        })
+      }
+      const officer = await Officer.query()
+        .where('officer_cid_hash256', hash_cid)
+        .first()
+
+      if (!officer) {
+        return response.unauthorized({
+          success: false,
+          message: 'ไม่พบข้อมูลบุคลากรในระบบ กรุณาติดต่อผู้ดูแลระบบ',
+          provider: {
+            provider_id,
+            name: name_th,
+          },
+        })
+      }
+
+      // ============================================
+      // Step 5: ตรวจสอบสถานะ officer
+      // ============================================
+      if (!officer.isActive) {
+        return response.unauthorized({
+          success: false,
+          message: 'บัญชีถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ',
+        })
+      }
+
+      // ============================================
+      // Step 6: สร้าง JWT token (เหมือน login ปกติ)
+      // ============================================
+      const tokenPayload = {
+        id: officer.officerId,
+        loginName: officer.officerLoginName,
+        name: officer.fullName,
+        email: officer.officerEmail,
+        doctorCode: officer.officerDoctorCode,
+        groups: officer.officerGroupListText,
+        loginMethod: 'provider_id', // ← บอกว่า login ด้วย Provider ID
+        providerId: provider_id,
+      }
+
+      const token = jwt.sign(tokenPayload, this.jwtSecret, {
+        expiresIn: this.jwtExpiresIn,
+        algorithm: 'HS256',
+        issuer: 'gwt-api',
+        audience: 'gwt-his',
+      } as jwt.SignOptions)
+
+      const expiresAt = new Date()
+      expiresAt.setDate(expiresAt.getDate() + 7)
+
+      const clientIp =
+        request.header('x-forwarded-for')?.split(',')[0]?.trim() ||
+        request.header('x-real-ip') ||
+        request.ip() ||
+        'unknown'
+      const userAgent = request.header('user-agent') || 'unknown'
+      const serverInfo = getServerInfo()
+
+      return response.ok({
+        success: true,
+        message: 'Login with Provider ID successful',
+        data: {
+          token,
+          tokenType: 'Bearer',
+          expiresAt: expiresAt.toISOString(),
+          user: {
+            id: officer.officerId,
+            loginName: officer.officerLoginName,
+            name: officer.fullName,
+            email: officer.officerEmail,
+            phone: officer.officerPhone,
+            mobile: officer.officerMobile,
+            doctorCode: officer.officerDoctorCode,
+            groups: officer.officerGroupListText,
+          },
+          provider: {
+            providerId: provider_id,
+            name: name_th,
+            organization: result.profile.organization,
+          },
+          loginInfo: {
+            method: 'provider_id',
+            clientIP: clientIp,
+            userAgent: userAgent,
+            serverIP: serverInfo.ip,
+            serverMAC: serverInfo.mac,
+            serverHostname: serverInfo.hostname,
+            loginTime: new Date().toISOString(),
+          },
+        },
+      })
+    } catch (error) {
+      
+      // จัดการ error จาก Health ID / Provider ID API
+      if (error instanceof HealthIdError) {
+        return response.status(error.statusCode).json({
+          success: false,
+          message: error.message,
+        })
+      }
+
+      return response.internalServerError({
+        success: false,
+        message: 'เกิดข้อผิดพลาดในการเข้าสู่ระบบด้วย Provider ID',
       })
     }
   }

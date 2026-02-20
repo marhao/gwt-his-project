@@ -287,24 +287,16 @@ export function MenuProvider({ children }: MenuProviderProps) {
         // Convert to MenuAccessItem with default permissions
         const accessItems = data.map(toMenuAccessItem);
 
-        // Debug log
-        console.log('Raw API data:', rawData);
-        console.log('Converted menu data:', data);
-        console.log('Menu count:', data.length);
-
         // Check if data already has nested children (is a tree)
         const isAlreadyTree = accessItems.some(
           (item) => item.children && Array.isArray(item.children) && item.children.length > 0
         );
 
         if (isAlreadyTree) {
-          console.log('Data is already a tree');
           setMenus(accessItems);
           setFlatMenus(flattenTree(accessItems));
         } else {
-          console.log('Building tree from flat data');
           const menuTree = buildMenuTree(accessItems);
-          console.log('Built menu tree:', menuTree);
           setMenus(menuTree);
           setFlatMenus(accessItems);
         }
@@ -314,7 +306,6 @@ export function MenuProvider({ children }: MenuProviderProps) {
       }
     } catch (err: unknown) {
       const error = err as { message?: string };
-      console.error('Menu fetch error:', error);
       setError(error.message || 'Failed to fetch menus');
       setMenus([]);
       setFlatMenus([]);

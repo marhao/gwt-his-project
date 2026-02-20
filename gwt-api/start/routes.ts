@@ -24,6 +24,7 @@ import {
   lookupRoutes,
 } from './routes/index.js'
 import nhsoRoutes from './routes/nhso.js'
+import deathRoutes from './routes/death.js'
 
 // ============================================
 // Root Route
@@ -62,4 +63,5 @@ groupsRoutes()    // /api/v1/settings/groups/*
 rolesRoutes()     // /api/v1/settings/roles/*
 lookupRoutes()    // /api/v1/lookups/*
 nhsoRoutes()      // /api/v1/nhso/*
+deathRoutes()     // /api/v1/death/*
 
