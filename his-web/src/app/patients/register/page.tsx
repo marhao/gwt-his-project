@@ -46,7 +46,7 @@ import {
   BLOOD_RH_OPTIONS,
   MARRY_STATUS_OPTIONS,
 } from '@/lib/types/patient';
-import { formatCid } from '@/lib/utils/string-format';
+import { extractAddressFromSmartCard, formatCid } from '@/lib/utils/string-format';
 import { formatSmartCard2DbDate } from '@/lib/utils/date-time';
 import { safeZodResolver } from '@/lib/utils/zod';
 import { patientApi } from '@/lib/api';
@@ -392,6 +392,13 @@ export default function PatientNewPage() {
         setValue("sex", data?.gender === "1" ? 'M' : 'F');
         setValue("birthday", data?.dob ? formatSmartCard2DbDate(data?.dob!) : '');
         setValue("cid", data?.cid || '');
+
+        /** ดึงข้อมูลที่อยู่ */
+        const { addrPart, mooPart, tmbPart, ampPart, chwPart } = extractAddressFromSmartCard(data.address)!;
+        const _province = provinces.find(prov => prov.name.includes(chwPart));
+        setValue("addrpart", addrPart);
+        setValue("moopart", mooPart);
+        setValue("chwpart", _province?.code!);
 
         const cardPhoto = data?.photo ? `data:image/jpeg;base64,${data?.photo}` : null;
         setPhoto(cardPhoto);
