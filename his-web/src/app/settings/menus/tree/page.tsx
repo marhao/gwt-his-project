@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, ChevronDown, ChevronRight, GripVertical, Edit, Eye, EyeOff, FolderOpen, Folder, RefreshCw, Expand, Shrink } from 'lucide-react';
 import { AdminLayout } from '@/components/layout';
 import { menuApi } from '@/lib/api';
-import { MenuItem } from '@/types';
+import { MenuItem } from '@/lib/types';
 import { getIcon } from '@/components/ui';
 
 interface TreeNode extends MenuItem {

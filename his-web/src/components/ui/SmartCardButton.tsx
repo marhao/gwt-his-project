@@ -6,7 +6,8 @@ import { useState, useEffect } from 'react';
 import { CreditCard, Wifi, WifiOff, Loader2, Check, AlertCircle, X } from 'lucide-react';
 import { useSmartCardReader, SmartCardData } from '@/hooks/useSmartCardReader';
 import { patientApi } from '@/lib/api';
-import { PatientListItem } from '@/types/patient.types';
+import { PatientListItem } from '@/lib/types/patient';
+import { formatCid } from '@/lib/utils/string-format';
 
 interface SmartCardButtonProps {
   onPatientFound: (hn: string, patient: PatientListItem, cardPhoto?: string | null) => void;
@@ -28,7 +29,6 @@ export function SmartCardButton({
   const [isSearching, setIsSearching] = useState(false);
   const [showStatus, setShowStatus] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
-
   const {
     isConnected,
     isReading,
@@ -78,11 +78,13 @@ export function SmartCardButton({
         // Found existing patient
         const patient = response.data[0];
         setStatusMessage(`พบผู้ป่วย: ${patient.fullName}`);
-        
+
         // Pass card photo as fallback (base64 with data URI prefix)
         const cardPhoto = data.photo 
           ? `data:image/jpeg;base64,${data.photo}`
           : null;
+
+        /** ถ้ามีข้อมูลในฐานข้อมูล */
         onPatientFound(patient.hn, patient, cardPhoto);
       } else {
         // New patient - not found in database
@@ -97,12 +99,6 @@ export function SmartCardButton({
     } finally {
       setIsSearching(false);
     }
-  }
-
-  // Format CID for display
-  function formatCid(cid: string): string {
-    if (!cid || cid.length !== 13) return cid;
-    return `${cid.slice(0, 1)}-${cid.slice(1, 5)}-${cid.slice(5, 10)}-${cid.slice(10, 12)}-${cid.slice(12)}`;
   }
 
   // Handle button click

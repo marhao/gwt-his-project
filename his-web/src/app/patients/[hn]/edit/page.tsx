@@ -47,7 +47,7 @@ import {
   BLOOD_GROUP_OPTIONS,
   BLOOD_RH_OPTIONS,
   MARRY_STATUS_OPTIONS,
-} from '@/types/patient.types';
+} from '@/lib/types/patient';
 
 // ============================================
 // Mock Data

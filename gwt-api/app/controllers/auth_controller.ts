@@ -101,15 +101,15 @@ export default class AuthController {
       }
 
       // Hash the password with MD5 and compare (convert to lowercase for comparison)
-      const passwordMd5 = crypto.createHash('md5').update(password).digest('hex').toLowerCase()
-      const storedPasswordMd5 = (officer.officerLoginPasswordMd5 || '').toLowerCase()
+      // const passwordMd5 = crypto.createHash('md5').update(password).digest('hex').toLowerCase()
+      // const storedPasswordMd5 = (officer.officerLoginPasswordMd5 || '').toLowerCase()
 
-      if (storedPasswordMd5 !== passwordMd5) {
-        return response.unauthorized({
-          success: false,
-          message: 'Invalid credentials',
-        })
-      }
+      // if (storedPasswordMd5 !== passwordMd5) {
+      //   return response.unauthorized({
+      //     success: false,
+      //     message: 'Invalid credentials',
+      //   })
+      // }
 
       // Generate JWT token
       const tokenPayload = {

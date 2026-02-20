@@ -1,4 +1,4 @@
-import { ApiResponse, MenuItem, Role, RoleMenuAccess, Group, Permission } from '@/types';
+import { ApiResponse, MenuItem, Role, RoleMenuAccess, Group, Permission } from '@/lib/types';
 import { 
   PatientListItem, 
   PatientDetail, 
@@ -6,7 +6,7 @@ import {
   PatientSearchParams, 
   PatientListResponse, 
   PatientStats 
-} from '@/types/patient.types';
+} from '@/lib/types/patient';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333/api/v1';
 

@@ -13,7 +13,7 @@ import {
   PatientSearchParams, 
   PatientStats,
   PatientListResponse,
-} from '@/types/patient.types';
+} from '@/lib/types/patient';
 
 // ============================================
 // usePatientList - Get paginated patient list

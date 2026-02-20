@@ -1,4 +1,4 @@
-import { BaseModel, column, belongsTo } from '@adonisjs/lucid/orm'
+import { BaseModel, column, belongsTo, beforeCreate } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 import Pname from './pname.js'
@@ -8,6 +8,7 @@ import Religion from './religion.js'
 import Marrystatus from './marrystatus.js'
 import Education from './education.js'
 import Pttype from './pttype.js'
+import SerialService from '../services/serial_service.js'
 
 export default class Patient extends BaseModel {
   static table = 'patient'
@@ -386,5 +387,13 @@ export default class Patient extends BaseModel {
 
   get isActive(): boolean {
     return this.death !== 'Y' && this.destroyed !== 'Y'
+  }
+
+  /** Hook to generate new HN */
+  @beforeCreate()
+  static async generateNewHn(patient: Patient) {
+    const newHn = await SerialService.getSerial('HN')
+
+    patient.hn = newHn.toString().padStart(7, '0')
   }
 }

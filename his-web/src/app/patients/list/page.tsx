@@ -50,7 +50,7 @@ import {
 } from '@/components/ui/context-menu';
 import { ConfirmDialog, useConfirmDialog } from '@/components/ui/confirm-dialog';
 import DatePicker from '@/components/ui/date-picker/DatePicker';
-import { PatientListItem, PatientSearchParams, PatientStats } from '@/types/patient.types';
+import { PatientListItem, PatientSearchParams, PatientStats } from '@/lib/types/patient';
 import { usePatientList, usePatientStats, usePttypes } from '@/hooks';
 import { patientApi } from '@/lib/api';
 
@@ -695,7 +695,7 @@ export default function PatientsPage() {
               <span className="hidden sm:inline">ส่งออก</span>
             </button>
             <button
-              onClick={() => router.push('/patients/new')}
+              onClick={() => router.push('/patients/register')}
               className="px-4 py-2 bg-primary-500 text-white rounded-xl text-sm font-medium flex items-center gap-2 hover:bg-primary-600 transition-colors shadow-lg shadow-primary-500/30"
             >
               <Plus size={16} />

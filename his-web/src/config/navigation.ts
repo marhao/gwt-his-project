@@ -1,4 +1,4 @@
-import { NavGroup } from '@/types';
+import { NavGroup } from '@/lib/types';
 
 export const navigationConfig: NavGroup[] = [
   {

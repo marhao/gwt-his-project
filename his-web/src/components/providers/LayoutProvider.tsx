@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { LayoutMode } from '@/types';
+import { LayoutMode } from '@/lib/types';
 
 interface LayoutContextType {
   mode: LayoutMode;

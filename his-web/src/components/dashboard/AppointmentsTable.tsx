@@ -8,7 +8,7 @@ import {
   RefreshCw, Download, Eye, Edit, Trash2,
   MapPin, CreditCard, FileText, ChevronRight
 } from 'lucide-react';
-import { Appointment } from '@/types';
+import { Appointment } from '@/lib/types';
 
 // Extended Appointment type for HIS
 interface HISAppointment extends Appointment {

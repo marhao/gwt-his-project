@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { AdminLayout } from '@/components/layout';
 import { menuApi } from '@/lib/api';
-import { MenuItem } from '@/types';
+import { MenuItem } from '@/lib/types';
 import { getIcon } from '@/components/ui';
 
 export default function MenuListPage() {
