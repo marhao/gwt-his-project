@@ -42,6 +42,7 @@ import DatePicker from '@/components/ui/date-picker';
 import FormSection from '@/components/ui/forms/FormSection';
 import FormField from '@/components/ui/forms/FormField';
 import AllergyInput from '@/components/ui/forms/AllergyInput';
+import Input from '@/components/ui/forms/Input';
 import {
   PatientDetail,
   PatientFormData,

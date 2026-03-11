@@ -269,7 +269,7 @@ export const lookupApi = {
     ),
 
    // ประเภทการมา
-   getOvstists: () =>
+  getOvstists: () =>
     api.get<{ success: boolean; data: OvstistLookup[] }>('/lookups/ovstists'),
 
 };
